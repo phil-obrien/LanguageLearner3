@@ -1,0 +1,79 @@
+﻿<!DOCTYPE html>
+<title>Language Learner</title>
+<link rel="stylesheet" type="text/css" href=" {{ url_for('static', filename='style1.css') }}" /> <!url_for is a FLASK function for Python>
+
+<div id="div1">
+
+    <h1 style="color:orangered">Welcome to the Language Learner!</h1>
+
+    <h2>Let's test your {{TestLanguage}} skills!!</h2>
+
+</div>
+
+<div id="div2" inline-block; width: 80px>
+
+    <!**************** FORM CONTAINING TWO RADIO GROUPS, RANGE INPUTS AND "GO" BUTTON *****************>
+
+    <form display: inline-block; width: 80px action="" method="post">
+
+        <!************************** FIRST RADIO GROUP ******************************>
+
+        <fieldset display: inline-block; width: 80px>
+            <legend>Nature of Test</legend>
+            <input type="radio" id="id_natureOfTest1"
+                   name="translationDirectionOfTest" value="nativeToForeign" checked="checked">
+            <label>Native to {{TestLanguage}}</label>
+            <br>
+            <input type="radio" id="id_natureOfTest2"
+                   name="translationDirectionOfTest" value="foreignToNative">
+            <label>{{TestLanguage}} to Native</label>
+            <br>
+            <input type="radio" id="id_natureOfTest3"
+                   name="translationDirectionOfTest" value="randomDuringTest">
+            <label>Random During Test</label>
+        </fieldset>
+
+        <!************************** /FIRST RADIO GROUP ******************************>
+
+        <!************************** SECOND RADIO GROUP & RANGE INPUTS ***************>
+
+        <h3>There are {{SizeOfDictionary}} words in the {{TestLanguage}} language dictionary</h3>
+        <fieldset display: inline-block; width: 80px>
+            <legend>Test all words or test in a range?</legend>
+            <input type="radio" id="id_radioChoiceTestAll"
+                   name="allOrRange" value="testAllWords" checked="checked">
+            <label>Test Entire Dictionary</label>
+            <br>
+            <input type="radio" id="id_radioChoiceTestRange"
+                   name="allOrRange" value="testRangeWords">
+            <label>Enter Range Below</label>
+            <br>
+            <br>
+            <label for="inputRangeFrom">From: </label>
+            <input type="text" id="id_inputRangeFrom" name="inputRangeFrom">
+            <label for="inputRangeTo">To: </label>
+            <input type="text" id="id_inputRangeTo" name="inputRangeTo">
+        </fieldset>
+
+        <!************************** /SECOND RADIO GROUP & RANGE INPUTS *******>
+
+        <!************************** "GO" BUTTON ******************************>
+        <button id="btnSubmitTableData" name="btnSubmitTableData" value="submit">GO!!!</button>
+
+        <input type="hidden" id="id_CurrentLanguage" name="currentLanguage">
+        <!************************** /"GO" BUTTON ******************************>
+    </form>
+
+    <!**************** /FORM CONTAINING TWO RADIO GROUPS, RANGE INPUTS AND "GO" BUTTON *****************>
+</div>
+
+<script>
+  //populate the range fields with 1 to number-of-words-in-dictionary
+    document.getElementById("id_inputRangeFrom").value = '1';
+    document.getElementById("id_inputRangeTo").value = "{{SizeOfDictionary}}";
+
+  //populate hidden field with language to be tested (this allows parameter to be sent to the server-side)
+    var js_currentLanguage = "{{ TestLanguage }}"; //note the quotes - without these, the system tries to assign the VARIABLE (eg) GERMAN to js_editLanguage instead of the VALUE "GERMAN" (eg)
+    console.log(js_currentLanguage);
+    document.getElementById("id_CurrentLanguage").value = js_currentLanguage;
+</script>

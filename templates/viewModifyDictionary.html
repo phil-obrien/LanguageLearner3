@@ -1,0 +1,930 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <link rel="stylesheet" type="text/css" href=" {{ url_for('static', filename='style1.css') }}" /> <!url_for is a FLASK function for Python>
+</head>
+<body>
+
+    <div id="div1">
+
+        <input type="text" id="randomInputField">
+
+        <h1 style="color:orangered">Welcome to the Language Learner!</h1>
+
+        <h2>View and Modify {{EditLanguage}} dictionary</h2>
+
+    </div>
+
+    <div id="div2">
+
+        <button class="smallFloatingButtonEnabled" id="btnSave" onclick="btnSaveOnClick()">SAVE</button>
+        <button class="smallFloatingButtonEnabled" id="btnUndoAll" onclick="btnUndoAllOnClick()">Undo All Changes</button>
+
+        <form action="" method="post">
+            <button id="btnSubmitTableData" name="btnSubmitTableData" value="submit" onclick="btnSubmitTableDataOnClick()">Submit</button>
+            <br>
+            <input type="text" id="JsonStringFieldToPython" name="toPythonTableData"> <!"name" attribute is crucial for sending data to the server! No need for flask specific stuff here! Who knew?! See Python comment>
+            <input type="text" id="id_currentLanguage" name="currentLanguage">
+        </form>
+        
+        <br>
+
+        <table id="tableOfWords" align="center">
+            <thead>
+                <tr>
+                    <th>Native Word</th>
+                    <th>Native Hint</th>
+                    <th>Foreign Word</th>
+                    <th>Foreign Hint</th>
+                    <th>Foreign Plural</th>
+                    <th>Action</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody id="tableOfWordsBody"></tbody>
+        </table>
+        <br>
+
+        <button class="smallFloatingButtonEnabled" id="btnAddNewRow" onclick="btnAddNewRowOnClick()">Add New Row</button>
+        <button class="smallFloatingButtonEnabled" id="btnDebugAction" onclick="btnDebugActionOnClick()">DebugAction</button>
+        <br>
+
+        <div id="divAddOrModifyRow" style="display:none">
+
+            <fieldset display: inline-block; width: 80px>
+                <legend id="legendInputFormHeaderCaption">THIS CAPTION SHOULD NOT BE VISIBLE - EDIT/MODIFY/ETC ONLY</legend>
+                <label for="inputNativeWord">Native Word: *</label>
+                <input type="text" id="inputNativeWord" oninput="inputMandatoryWordOnInput()" onkeyup="formInputOnKeyUp(event, 'inputNativeWord')">
+                <label for="inputNativeHint">Native Hint:</label>
+                <input type="text" id="inputNativeHint" onkeyup="formInputOnKeyUp(event, 'inputNativeHint')">
+                <br>
+                <label for="inputForeignWord">Foreign Word: *</label>
+                <input type="text" id="inputForeignWord" oninput="inputMandatoryWordOnInput()" onkeyup="formInputOnKeyUp(event, 'inputForeignWord')">
+                <label for="inputForeignHint">Foreign Hint:</label>
+                <input type="text" id="inputForeignHint" onkeyup="formInputOnKeyUp(event, 'inputForeignHint')">
+                <br>
+                <label for="inputForeignPlural">Foreign Plural:</label>
+                <input type="text" id="inputForeignPlural" onkeyup="formInputOnKeyUp(event, 'inputForeignPlural')">
+                <br />
+                <button class="smallFloatingButtonEnabled" id="btnConfirm" onclick="btnConfirmOnClick()">Confirm</button>
+                <button class="smallFloatingButtonEnabled" id="btnClose" onclick="btnCloseOnClick()">Close</button>
+            </fieldset>
+
+        </div>
+
+    </div>
+
+<script>
+    //these consts are specific to the form used to create/modify table rows. They are used to change the Form caption, and also to test the Form Mode so we'll know if we're doing a modify or create
+    const createNewRowCaption = "Create New Entry";
+    const modifyRowCaption    = "Edit Details";
+
+    const NEW_ROW_ICON        = "NEW";
+    const MODIFY_ROW_ICON     = "MOD";
+    const DELETE_ROW_ICON     = "DEL";
+    const LOADED_FROM_DB_ICON = "DB";
+
+    const POST_CREATE_ROW = "CREATE";
+    const POST_MODIFY_ROW = "MODIFY";
+    const POST_DELETE_ROW = "DELETE";
+
+    const js_editLanguage = "{{EditLanguage}}"; //note the quotes - without these, the system tries to assign the VARIABLE (eg) GERMAN to js_editLanguage instead of the VALUE "GERMAN" (eg)
+    
+
+    var rowBeingModifiedGlobal; //this global variable holds the value of the table body row (0..n) being modified
+
+    var JSONarrayOfWords = {{ JSON_allRowsForSpecificLanguage| tojson}};  //populate a JSON array from the (jinja?) FLASK array (originally a LIST in python)
+    var JSarrayOfWords = JSON.parse(JSONarrayOfWords); //now parse the JSON array into a JAVASCRIPT array
+
+    var JS_ArrayOfRowsToBePosted = [];
+    var JSON_ArrayOfRowsToBePosted = []; //xyz since this is a JSON variable it probably shouldn't be declared as a JS array!!
+
+//BEGIN testing...
+    console.log(JSONarrayOfWords);
+    console.log(JSarrayOfWords);
+    //document.getElementById("JsonStringFieldToPython").value = JSONarrayOfWords; //xyz 01/12/18 why was this line of code here? why populate the JSON when loading??
+    //document.getElementById("JsonStringFieldToPython").value = "Latin";
+//END testing...
+
+
+    //disable the SAVE and UNDO ALL buttons
+    document.getElementById("btnSave").className = "smallFloatingButtonDisabled";
+    document.getElementById("btnSave").disabled = true;
+    document.getElementById("btnUndoAll").className = "smallFloatingButtonDisabled";
+    document.getElementById("btnUndoAll").disabled = true;
+
+    populateDictionaryTable();
+
+    function populateDictionaryTable() {
+
+        for (i = 0; i < JSarrayOfWords.length; i++) {
+
+            var nativeWord    = JSarrayOfWords[i][0];
+            var nativeHint    = JSarrayOfWords[i][1];
+            var foreignWord   = JSarrayOfWords[i][2];
+            var foreignHint   = JSarrayOfWords[i][3];
+            var foreignPlural = JSarrayOfWords[i][4];
+
+            addNewRowToTable(i, nativeWord, nativeHint, foreignWord, foreignHint, foreignPlural, LOADED_FROM_DB_ICON);
+            
+        };                
+
+        var currentLength = document.getElementById("tableOfWords").rows.length;
+        console.log("tableLength =", currentLength);
+        var currentLength = document.getElementById("tableOfWordsBody").rows.length;
+        console.log("tableLength(body) =", currentLength);
+    }
+
+    function btnAddNewRowOnClick() {
+        //make the Add/Edit Row form visible
+        document.getElementById("divAddOrModifyRow").style.display = 'block';    //'block' makes the div containing the Add/Edit Row form appear (as opposed to 'none' which makes it disappear)
+        document.getElementById("legendInputFormHeaderCaption").innerHTML = createNewRowCaption;
+        //initialise the form fields
+        document.getElementById("inputNativeWord").value = "";
+        document.getElementById("inputNativeHint").value = "";
+        document.getElementById("inputForeignWord").value = "";
+        document.getElementById("inputForeignHint").value = "";
+        document.getElementById("inputForeignPlural").value = "";
+
+        document.getElementById("inputNativeWord").addEventListener("keyup", function (event) {
+            if (event.key === "Enter") {
+                console.log("Someone pressed Enter!");
+            }
+        });
+
+        //temporarily disable all relevant enabled buttons while the Add/Edit dialog is visible...
+
+            //...the big yellow button for Adding New Rows:
+        document.getElementById("btnAddNewRow").className = "smallFloatingButtonDisabled";
+        document.getElementById("btnAddNewRow").disabled = true;
+
+            //...and the buttons embedded in the table:
+        temporarilyDisableTableButtons();
+
+        document.getElementById("btnConfirm").className = "smallFloatingButtonDisabled";
+        document.getElementById("btnConfirm").disabled = true;
+
+        document.getElementById("inputNativeWord").focus();
+    };
+
+    function btnConfirmOnClick() {
+                /*************************/
+                /* btnConfirm for CREATE */
+                /*************************/
+        if (document.getElementById("legendInputFormHeaderCaption").innerHTML == createNewRowCaption) {
+            var rowNum = (document.getElementById("tableOfWords").rows.length - 1);
+            var nativeWord = document.getElementById("inputNativeWord").value;
+            var nativeHint = document.getElementById("inputNativeHint").value;
+            var foreignWord = document.getElementById("inputForeignWord").value;
+            var foreignHint = document.getElementById("inputForeignHint").value;
+            var foreignPlural = document.getElementById("inputForeignPlural").value;
+
+            //Let's have a look and see if the entry the user is making exists already. We'll check for an identical Native Word
+            //and also for an indentical Foreign Word and alert the user if necessary with an appropriate message.
+            //The entry will be added anyway, but the user has been warned and hence can adjust if needed!
+
+            let scanTableBody = document.getElementById("tableOfWordsBody");
+            let duplicateAlertMessage = "";
+
+            for (i = 0; i < scanTableBody.rows.length; i++) {
+                if (nativeWord.trim().toLowerCase() == scanTableBody.rows[i].cells[0].innerHTML.trim().toLowerCase()) {
+                    duplicateAlertMessage = "Existing Row# " + (i).toString() + " contains NATIVE word: " + scanTableBody.rows[i].cells[0].innerHTML + " & foreign word: " + scanTableBody.rows[i].cells[2].innerHTML;
+                    alert(duplicateAlertMessage);
+                    continue; //this exits this iteration of the loop only (we don't want a second alert to tell us if the foreign word is also equal)
+                };
+                if (foreignWord.trim().toLowerCase() == scanTableBody.rows[i].cells[2].innerHTML.trim().toLowerCase()) {
+                    duplicateAlertMessage = "Existing Row# " + (i).toString() + " contains native word: " + scanTableBody.rows[i].cells[0].innerHTML + " & FOREIGN word: " + scanTableBody.rows[i].cells[2].innerHTML;
+                    alert(duplicateAlertMessage);
+                };
+            };
+
+            //Duplicate-checking complete, add the row new:
+
+            addNewRowToTable(rowNum, nativeWord, nativeHint, foreignWord, foreignHint, foreignPlural, NEW_ROW_ICON);
+
+            //enable the SAVE and UNDO ALL buttons
+            document.getElementById("btnSave").className = "smallFloatingButtonEnabled";
+            document.getElementById("btnSave").disabled = false;
+            document.getElementById("btnUndoAll").className = "smallFloatingButtonEnabled";
+            document.getElementById("btnUndoAll").disabled = false;
+
+            //initialise the form fields
+            document.getElementById("inputNativeWord").value = "";
+            document.getElementById("inputNativeHint").value = "";
+            document.getElementById("inputForeignWord").value = "";
+            document.getElementById("inputForeignHint").value = "";
+            document.getElementById("inputForeignPlural").value = "";
+
+            document.getElementById("btnConfirm").className = "smallFloatingButtonDisabled";
+            document.getElementById("btnConfirm").disabled = true;
+
+            document.getElementById("inputNativeWord").focus();
+        }
+                /*************************/
+                /* btnConfirm for MODIFY */
+                /*************************/
+        else if (document.getElementById("legendInputFormHeaderCaption").innerHTML == modifyRowCaption) {
+
+            var tableBody = document.getElementById("tableOfWordsBody");
+
+            tableBody.rows[rowBeingModifiedGlobal].cells[0].innerHTML = document.getElementById("inputNativeWord").value;
+            tableBody.rows[rowBeingModifiedGlobal].cells[1].innerHTML = document.getElementById("inputNativeHint").value;
+            tableBody.rows[rowBeingModifiedGlobal].cells[2].innerHTML = document.getElementById("inputForeignWord").value;
+            tableBody.rows[rowBeingModifiedGlobal].cells[3].innerHTML = document.getElementById("inputForeignHint").value;
+            tableBody.rows[rowBeingModifiedGlobal].cells[4].innerHTML = document.getElementById("inputForeignPlural").value;
+
+            if (tableBody.rows[rowBeingModifiedGlobal].cells[6].innerHTML != NEW_ROW_ICON) { //don't make the UNDO button available and don't change the icon to EDIT if we're modifying a row that is not yet on DB (i.e. user created it and hasn't saved yet).
+         
+                if (JSarrayOfWords[rowBeingModifiedGlobal][0] != document.getElementById("inputNativeWord").value
+                    || JSarrayOfWords[rowBeingModifiedGlobal][1] != document.getElementById("inputNativeHint").value
+                    || JSarrayOfWords[rowBeingModifiedGlobal][2] != document.getElementById("inputForeignWord").value
+                    || JSarrayOfWords[rowBeingModifiedGlobal][3] != document.getElementById("inputForeignHint").value
+                    || JSarrayOfWords[rowBeingModifiedGlobal][4] != document.getElementById("inputForeignPlural").value) {
+
+                    tableBody.rows[rowBeingModifiedGlobal].cells[6].innerHTML = MODIFY_ROW_ICON;
+
+                    let undoButtonId = "undoButton" + String(rowBeingModifiedGlobal);
+                    document.getElementById(undoButtonId).className = "tableButtonEnabled";
+                    document.getElementById(undoButtonId).disabled = false;
+
+                    //enable the SAVE and UNDO ALL buttons
+                    document.getElementById("btnSave").className = "smallFloatingButtonEnabled";
+                    document.getElementById("btnSave").disabled = false;
+                    document.getElementById("btnUndoAll").className = "smallFloatingButtonEnabled";
+                    document.getElementById("btnUndoAll").disabled = false;
+
+                };
+            };
+            btnCloseOnClick();  //simulate clicking on the CLOSE DIALOG button to close the form and re-enable temporarily disabled table buttons, etc
+        };
+    };
+
+    function addNewRowToTable(rowNum, nativeWord, nativeHint, foreignWord, foreignHint, foreignPlural, rowStatus) {
+        var tableBody = document.getElementById("tableOfWordsBody");
+        var row = tableBody.insertRow(-1); //inserting at row -1 means we append after the last row
+        var cell0 = row.insertCell(0);                  //native word
+        var cell1 = row.insertCell(1);                  //native hint
+        var cell2 = row.insertCell(2);                  //foreign word
+        var cell3 = row.insertCell(3);                  //foreign hint
+        var cell4 = row.insertCell(4);                  //foreign plural
+        var cell5 = row.insertCell(5);                  //action-buttons cell 
+        var cell6 = row.insertCell(6);                  //row status
+        cell0.innerHTML = nativeWord;
+        cell1.innerHTML = nativeHint;
+        cell2.innerHTML = foreignWord;
+        cell3.innerHTML = foreignHint;
+        cell4.innerHTML = foreignPlural;
+
+        //****************************************************
+        //CELL 5 (ACTION BUTTONS):
+        //EDIT Button:
+        var editButton = document.createElement("BUTTON");
+        var editTextNode = document.createTextNode("Edit");
+        editButton.appendChild(editTextNode);
+
+        var editButtonID = "editButton" + String(rowNum);
+        editButton.setAttribute("id", editButtonID);
+        console.log("editButtonID:", editButtonID)
+
+        cell5.appendChild(editButton);
+
+        if (rowStatus == LOADED_FROM_DB_ICON) {
+            document.getElementById(editButtonID).className = "tableButtonEnabled";
+        }
+        else if (rowStatus == NEW_ROW_ICON) {
+            document.getElementById(editButtonID).className = "tableButtonTemporarilyDisabled";
+            document.getElementById(editButtonID).disabled = true;
+        };
+
+        document.getElementById(editButtonID).addEventListener("click", function () { editTableRow(rowNum); });  //comment required!
+        //document.getElementById(editButtonID).addEventListener("click", editTableRow(rowNum));  //comment required!
+
+        //DELETE Button:
+        var deleteButton = document.createElement("BUTTON");
+        var deleteTextNode = document.createTextNode("Delete");
+        deleteButton.appendChild(deleteTextNode);
+
+        var deleteButtonID = "deleteButton" + String(rowNum);
+        deleteButton.setAttribute("id", deleteButtonID);
+
+        cell5.appendChild(deleteButton);
+
+        if (rowStatus == LOADED_FROM_DB_ICON) {
+            document.getElementById(deleteButtonID).className = "tableButtonEnabled";
+        }
+        else if (rowStatus == NEW_ROW_ICON) {
+            document.getElementById(deleteButtonID).className = "tableButtonTemporarilyDisabled";
+            document.getElementById(deleteButtonID).disabled = true;
+        };
+
+        document.getElementById(deleteButtonID).addEventListener("click", function () { deleteTableRow(rowNum); });  //comment required!
+
+        //UNDO Button:
+        var undoButton = document.createElement("BUTTON");
+        var undoTextNode = document.createTextNode("Undo");
+        undoButton.appendChild(undoTextNode);
+
+        var undoButtonID = "undoButton" + String(rowNum);
+        undoButton.setAttribute("id", undoButtonID);
+
+        cell5.appendChild(undoButton);
+
+        document.getElementById(undoButtonID).className = "tableButtonDisabled";
+        document.getElementById(undoButtonID).disabled = true;
+
+        document.getElementById(undoButtonID).addEventListener("click", function () { undoTableRow(rowNum); });  //comment required!
+
+        //****************************************************
+        //CELL 6 (Status, i.e. Creating/Modifying/Deleting/LoadedFromDB)
+
+        cell6.innerHTML = rowStatus;
+
+        //****************************************************
+        // console logging
+        console.log(undoButtonID);
+        console.log(rowNum);
+        console.log(nativeWord, nativeHint, foreignWord, foreignHint);
+    }   //******** end of function: addNewRowToTable ********
+
+    function btnCloseOnClick() {
+        document.getElementById("divAddOrModifyRow").style.display = 'none';
+
+        document.getElementById("btnAddNewRow").className = "smallFloatingButtonEnabled";
+        document.getElementById("btnAddNewRow").disabled = false;
+
+        reEnableTemporarilyDisabledTableButtons();
+    };
+
+    function reEnableTemporarilyDisabledTableButtons() {
+        //...and the buttons embedded in the table:
+        let reEnableTemporarilyDisabledButtons = [...document.getElementsByClassName("tableButtonTemporarilyDisabled")];
+        console.log("reEnableTemporarilyDisabledButtons:", reEnableTemporarilyDisabledButtons);
+        {//The ... here represents the "spread operator" which basically expands any iterable into its individual elements
+            //The square brackets [] define an array.
+            //reEnableTemporarilyDisabledButtons is thus defined as an array containing the objects within the HTML-Collection created by getElementsByClassName
+            //This (new to ES6) "spread operator" is a one-step replacement for these two lines:
+            //let myHTMLCollection = document.getElementsByClassName("tableButtonTemporarilyDisabled");
+            //let reEnableTemporarilyDisabledButtons = Array.from(myHTMLCollection);
+        }
+        for (var i = 0; i < reEnableTemporarilyDisabledButtons.length; i++) {
+            console.log("reEnableTemporarilyDisabledButtons LIVE size:", reEnableTemporarilyDisabledButtons.length);
+            console.log("loop i:", i);
+            console.log(reEnableTemporarilyDisabledButtons[i]);
+            reEnableTemporarilyDisabledButtons[i].className = "tableButtonEnabled"; //change the class to temporarily disable button (visual only)
+            reEnableTemporarilyDisabledButtons[i].disabled = false;
+        };
+    };
+
+    function editTableRow(tableBodyRowNum) {
+        console.log("tableBodyRowNum:", tableBodyRowNum);
+
+        //we're editing a populated row (whether it exists on DB yet or not doesn't matter) so enable btnCONFIRM
+        document.getElementById("btnConfirm").className = "smallFloatingButtonEnabled";
+        document.getElementById("btnConfirm").disabled = false;
+
+        rowBeingModifiedGlobal = tableBodyRowNum; //this global variable is needed so that btnConfirm knows which row we're modifying. It would be tidier if there was a way we could use parameters to do this but I'm not sure the scope allows us (unless we go down the road of modifying event listeners)
+
+        var tableBody = document.getElementById("tableOfWordsBody");
+
+        document.getElementById("divAddOrModifyRow").style.display = 'block';    //'block' makes the div containing the Add New Row form appear (as opposed to 'none' which makes it disappear)
+        document.getElementById("legendInputFormHeaderCaption").innerHTML = modifyRowCaption;
+
+        document.getElementById("inputNativeWord").value =    tableBody.rows[tableBodyRowNum].cells[0].innerHTML;
+        document.getElementById("inputNativeHint").value =    tableBody.rows[tableBodyRowNum].cells[1].innerHTML;
+        document.getElementById("inputForeignWord").value =   tableBody.rows[tableBodyRowNum].cells[2].innerHTML;
+        document.getElementById("inputForeignHint").value =   tableBody.rows[tableBodyRowNum].cells[3].innerHTML;
+        document.getElementById("inputForeignPlural").value = tableBody.rows[tableBodyRowNum].cells[4].innerHTML;
+
+        //temporarily disable all relevant enabled buttons while the Add/Edit dialog is visible...
+
+        //...the big yellow button for Adding New Rows:
+        document.getElementById("btnAddNewRow").className = "smallFloatingButtonDisabled";
+        document.getElementById("btnAddNewRow").disabled = true;
+
+        //...and the buttons embedded in the table:
+        temporarilyDisableTableButtons();
+    }
+
+    function deleteTableRow(tableBodyRowNum) {
+        var tableBody = document.getElementById("tableOfWordsBody");
+
+        if (tableBody.rows[tableBodyRowNum].cells[6].innerHTML == NEW_ROW_ICON) {
+            //To DELETE a  NEW row, remove the row completely and also update the IDs AND EVENT LISTENERS of the 3 action buttons on ALL subsequent rows 
+            //(in order to keep table body rows numerically linked to IDs on these buttons - vital for processing correct table body row when clicking 
+            //table buttons)
+           
+            console.log("tableBody.rows.length (before loop & delete)", tableBody.rows.length);
+
+            for (let i = tableBodyRowNum+1; i < tableBody.rows.length; i++) {
+
+                let removeEditButtonID = "editButton" + String(i);
+                let elem = document.getElementById(removeEditButtonID);
+                elem.parentNode.removeChild(elem);
+
+                let removeDeleteButtonID = "deleteButton" + String(i);
+                elem = document.getElementById(removeDeleteButtonID);
+                elem.parentNode.removeChild(elem);
+
+                let removeUndoButtonID = "undoButton" + String(i);
+                elem = document.getElementById(removeUndoButtonID);
+                elem.parentNode.removeChild(elem);
+            };
+
+            tableBody.deleteRow(tableBodyRowNum);
+            console.log("tableBody.rows.length (after loop & delete)", tableBody.rows.length);
+
+            for (let i = tableBodyRowNum; i < tableBody.rows.length; i++) {
+                addTableButtonsToTableBodyRow(i, NEW_ROW_ICON);
+                reEnableTemporarilyDisabledTableButtons();
+            };
+
+            //disable the SAVE and UNDO ALL buttons xyz compound this in a function
+            document.getElementById("btnSave").className = "smallFloatingButtonDisabled";
+            document.getElementById("btnSave").disabled = true;
+            document.getElementById("btnUndoAll").className = "smallFloatingButtonDisabled";
+            document.getElementById("btnUndoAll").disabled = true;
+
+            for (let i = 0; i < tableBody.rows.length; i++) {
+                if (tableBody.rows[i].cells[6].innerHTML != LOADED_FROM_DB_ICON) {
+                    //enable the SAVE and UNDO ALL buttons
+                    document.getElementById("btnSave").className = "smallFloatingButtonEnabled";
+                    document.getElementById("btnSave").disabled = false;
+                    document.getElementById("btnUndoAll").className = "smallFloatingButtonEnabled";
+                    document.getElementById("btnUndoAll").disabled = false;
+
+                    break; //this breaks out of the for loop (even though there's an if within the loop and we're in that if structure)
+                };
+            };
+        }
+        else if (tableBody.rows[tableBodyRowNum].cells[6].innerHTML == LOADED_FROM_DB_ICON
+             ||  tableBody.rows[tableBodyRowNum].cells[6].innerHTML == MODIFY_ROW_ICON) {
+
+            tableBody.rows[tableBodyRowNum].cells[6].innerHTML = DELETE_ROW_ICON;
+
+            let deleteButtonID = "deleteButton" + String(tableBodyRowNum);
+            document.getElementById(deleteButtonID).className = "tableButtonDisabled";
+            document.getElementById(deleteButtonID).disabled = true;
+
+            let editButtonID = "editButton" + String(tableBodyRowNum);
+            document.getElementById(editButtonID).className = "tableButtonDisabled";
+            document.getElementById(editButtonID).disabled = true;
+
+            let undoButtonID = "undoButton" + String(tableBodyRowNum);
+            document.getElementById(undoButtonID).className = "tableButtonEnabled";
+            document.getElementById(undoButtonID).disabled = false;
+
+            //enable the SAVE and UNDO ALL buttons
+            document.getElementById("btnSave").className = "smallFloatingButtonEnabled";
+            document.getElementById("btnSave").disabled = false;
+            document.getElementById("btnUndoAll").className = "smallFloatingButtonEnabled";
+            document.getElementById("btnUndoAll").disabled = false;
+        };
+    };
+
+    function addTableButtonsToTableBodyRow(rowNum, rowStatus) {
+
+        let tableBody = document.getElementById("tableOfWordsBody");
+
+        //****************************************************
+        //CELL 5 (ACTION BUTTONS):
+        //EDIT Button:
+        let editButton = document.createElement("BUTTON");
+        let editTextNode = document.createTextNode("Edit");
+        editButton.appendChild(editTextNode);
+
+        let editButtonID = "editButton" + String(rowNum);
+        editButton.setAttribute("id", editButtonID);
+        console.log("editButtonID:", editButtonID)
+
+        tableBody.rows[rowNum].cells[5].appendChild(editButton);
+
+        if (rowStatus == LOADED_FROM_DB_ICON) {
+            document.getElementById(editButtonID).className = "tableButtonEnabled";
+        }
+        else if (rowStatus == NEW_ROW_ICON) {
+            document.getElementById(editButtonID).className = "tableButtonTemporarilyDisabled";
+            document.getElementById(editButtonID).disabled = true;
+        };
+
+        document.getElementById(editButtonID).addEventListener("click", function () { editTableRow(rowNum); });  //comment required!
+        //document.getElementById(editButtonID).addEventListener("click", editTableRow(rowNum));  //comment required!
+
+        //DELETE Button:
+        let deleteButton = document.createElement("BUTTON");
+        let deleteTextNode = document.createTextNode("Delete");
+        deleteButton.appendChild(deleteTextNode);
+
+        let deleteButtonID = "deleteButton" + String(rowNum);
+        deleteButton.setAttribute("id", deleteButtonID);
+
+        tableBody.rows[rowNum].cells[5].appendChild(deleteButton);
+
+        if (rowStatus == LOADED_FROM_DB_ICON) {
+            document.getElementById(deleteButtonID).className = "tableButtonEnabled";
+        }
+        else if (rowStatus == NEW_ROW_ICON) {
+            document.getElementById(deleteButtonID).className = "tableButtonTemporarilyDisabled";
+            document.getElementById(deleteButtonID).disabled = true;
+        };
+
+        document.getElementById(deleteButtonID).addEventListener("click", function () { deleteTableRow(rowNum); });  //comment required!
+
+        //UNDO Button:
+        let undoButton = document.createElement("BUTTON");
+        let undoTextNode = document.createTextNode("Undo");
+        undoButton.appendChild(undoTextNode);
+
+        let undoButtonID = "undoButton" + String(rowNum);
+        undoButton.setAttribute("id", undoButtonID);
+
+        tableBody.rows[rowNum].cells[5].appendChild(undoButton);
+
+        document.getElementById(undoButtonID).className = "tableButtonDisabled";
+        document.getElementById(undoButtonID).disabled = true;
+
+        document.getElementById(undoButtonID).addEventListener("click", function () { undoTableRow(rowNum); });  //comment required!
+    };
+
+    function btnUndoAllOnClick() {
+
+        let tableOfWordsBody = document.getElementById("tableOfWordsBody");
+
+        //UNDO all rows which were loaded from DB and subsequently EDITed or selected for DELETE:
+        for (let i = 0; i < tableOfWordsBody.rows.length; i++) {
+
+            let undoButtonID = "undoButton" + String(i);
+            let undoButton = document.getElementById(undoButtonID);
+
+            if (undoButton.className == "tableButtonEnabled") { //if the UNDO button on the current table body row is enabled, simulate an UNDO click
+                undoButton.click();
+            };
+
+            if (undoButton.className == "tableButtonEnabled") { //repeat the test for UNDO enabled because if a modified row is selected for delete, it takes two UNDOs to revert it fully
+                undoButton.click();
+            };
+        };
+
+        //DELETE any user-created NEW rows (they don't exist on the DB yet). We can use a WHILE loop because we know all NEW rows are at the end of the table
+        while (tableOfWordsBody.rows[(tableOfWordsBody.rows.length - 1)].cells[6].innerHTML == NEW_ROW_ICON) {  //if the last row is user-created NEW...
+            tableOfWordsBody.deleteRow(-1);                                                                     //...delete it (then loop and check the last row again)
+        };
+
+        //disable the SAVE and UNDO ALL buttons
+        document.getElementById("btnSave").className = "smallFloatingButtonDisabled";
+        document.getElementById("btnSave").disabled = true;
+        document.getElementById("btnUndoAll").className = "smallFloatingButtonDisabled";
+        document.getElementById("btnUndoAll").disabled = true;
+    };
+
+    function undoTableRow(tableBodyRowNum) {
+        
+        var tableBody = document.getElementById("tableOfWordsBody");
+
+        if (tableBody.rows[tableBodyRowNum].cells[6].innerHTML == DELETE_ROW_ICON) {
+
+            //to UNDO a row flagged for DELETE, repopulate the row from the original array (only DB rows will ever be flagged for DELETE - user added (NEW) rows are removed completey when UNDO is clicked)
+
+            if (tableBody.rows[tableBodyRowNum].cells[0].innerHTML != JSarrayOfWords[tableBodyRowNum][0]
+            ||  tableBody.rows[tableBodyRowNum].cells[1].innerHTML != JSarrayOfWords[tableBodyRowNum][1]
+            ||  tableBody.rows[tableBodyRowNum].cells[2].innerHTML != JSarrayOfWords[tableBodyRowNum][2]
+            ||  tableBody.rows[tableBodyRowNum].cells[3].innerHTML != JSarrayOfWords[tableBodyRowNum][3]
+            ||  tableBody.rows[tableBodyRowNum].cells[4].innerHTML != JSarrayOfWords[tableBodyRowNum][4]) {
+
+                console.log("PATH: UNDO a DELETE where ROW has been EDITed");
+
+                let deleteButtonID = "deleteButton" + String(tableBodyRowNum);
+                document.getElementById(deleteButtonID).className = "tableButtonEnabled";
+                document.getElementById(deleteButtonID).disabled = false;
+
+                let editButtonID = "editButton" + String(tableBodyRowNum);
+                document.getElementById(editButtonID).className = "tableButtonEnabled";
+                document.getElementById(editButtonID).disabled = false;
+
+                let undoButtonID = "undoButton" + String(tableBodyRowNum); //disable the edit button on this row
+                document.getElementById(undoButtonID).className = "tableButtonEnabled";
+                document.getElementById(undoButtonID).disabled = false;
+
+                tableBody.rows[tableBodyRowNum].cells[6].innerHTML = MODIFY_ROW_ICON;
+            }
+            else {
+                console.log("PATH: UNDO a DELETE where ROW has NOT been EDITed");
+
+                let deleteButtonID = "deleteButton" + String(tableBodyRowNum);
+                document.getElementById(deleteButtonID).className = "tableButtonEnabled";
+                document.getElementById(deleteButtonID).disabled = false;
+
+                let editButtonID = "editButton" + String(tableBodyRowNum);
+                document.getElementById(editButtonID).className = "tableButtonEnabled";
+                document.getElementById(editButtonID).disabled = false;
+
+                let undoButtonID = "undoButton" + String(tableBodyRowNum); //disable the edit button on this row
+                document.getElementById(undoButtonID).className = "tableButtonDisabled";
+                document.getElementById(undoButtonID).disabled = true;
+
+                tableBody.rows[tableBodyRowNum].cells[6].innerHTML = LOADED_FROM_DB_ICON;
+            }
+        }
+
+        else if (tableBody.rows[tableBodyRowNum].cells[6].innerHTML == MODIFY_ROW_ICON) {
+            //To UNDO a MODIFY row, repopulate the row from the original array
+            tableBody.rows[tableBodyRowNum].cells[0].innerHTML = JSarrayOfWords[tableBodyRowNum][0];
+            tableBody.rows[tableBodyRowNum].cells[1].innerHTML = JSarrayOfWords[tableBodyRowNum][1];
+            tableBody.rows[tableBodyRowNum].cells[2].innerHTML = JSarrayOfWords[tableBodyRowNum][2];
+            tableBody.rows[tableBodyRowNum].cells[3].innerHTML = JSarrayOfWords[tableBodyRowNum][3];
+            tableBody.rows[tableBodyRowNum].cells[4].innerHTML = JSarrayOfWords[tableBodyRowNum][4];
+
+            let deleteButtonID = "deleteButton" + String(tableBodyRowNum);
+            document.getElementById(deleteButtonID).className = "tableButtonEnabled";
+            document.getElementById(deleteButtonID).disabled = false;
+
+            let editButtonID = "editButton" + String(tableBodyRowNum);
+            document.getElementById(editButtonID).className = "tableButtonEnabled";
+            document.getElementById(editButtonID).disabled = false;
+
+            let undoButtonID = "undoButton" + String(tableBodyRowNum); //disable the edit button on this row
+            document.getElementById(undoButtonID).className = "tableButtonDisabled";
+            document.getElementById(undoButtonID).disabled = true;
+
+            tableBody.rows[tableBodyRowNum].cells[6].innerHTML = LOADED_FROM_DB_ICON;
+        }
+        else if (tableBody.rows[tableBodyRowNum].cells[6].innerHTML = NEW_ROW_ICON) {
+            //To UNDO a  NEW row, remove the row completely and delete/re-create table buttons for subsequent rows to re-align button IDs and ROW #
+            tableBody.deleteRow(tableBodyRowNum);
+        };
+
+        //check every ROW STATUS on the table - if everything is now LOADED_FROM_DB we can safely disable btnSAVE and btnUndoAll too
+
+        //disable the SAVE and UNDO ALL buttons xyz compound this in a function
+        document.getElementById("btnSave").className = "smallFloatingButtonDisabled";
+        document.getElementById("btnSave").disabled = true;
+        document.getElementById("btnUndoAll").className = "smallFloatingButtonDisabled";
+        document.getElementById("btnUndoAll").disabled = true;
+
+        for (let i = 0; i < tableBody.rows.length; i++) {
+            if (tableBody.rows[i].cells[6].innerHTML != LOADED_FROM_DB_ICON) {
+                //enable the SAVE and UNDO ALL buttons
+                document.getElementById("btnSave").className = "smallFloatingButtonEnabled";
+                document.getElementById("btnSave").disabled = false;
+                document.getElementById("btnUndoAll").className = "smallFloatingButtonEnabled";
+                document.getElementById("btnUndoAll").disabled = false;
+
+                break; //this breaks out of the for loop (even though there's an if within the loop and we're in that if structure...not sure how nested loops are handled)
+                        //NOTE: the continue keyword would skip one iteration of the loop! Neat...when you need it!
+            };
+        };
+    };
+
+    function temporarilyDisableTableButtons() {
+        let temporarilyDisableButtons = [...document.getElementsByClassName("tableButtonEnabled")];
+        console.log("temporarilyDisableButtons:", temporarilyDisableButtons);
+        {//The ... here represents the "spread operator" which basically expands any iterable into its individual elements
+            //The square brackets [] define an array.
+            //temporarilyDisableButtons is thus defined as an array containing the objects within the HTML-Collection created by getElementsByClassName
+            //This (new to ES6) "spread operator" is a one-step replacement for these two lines:
+            //let myHTMLCollection = document.getElementsByClassName("tableButtonEnabled");
+            //let temporarilyDisableButtons = Array.from(myHTMLCollection);
+
+            //Also very noteworthy:
+            //I originally tried to use myHTMLCollection = document.getElementsByClassName("tableButtonEnabled") in the loop below.
+            //However, as HTMLCollections are LIVE, every time I updated the class of a button from tableButtonEnabled to tableButtonTemporarilyDisabled
+            //it meant myHTMLCollection.length was reduced by one! LIVE means the current state of the data is reflected, rather than the original state
+            //state of the data. So if we have a HTMLCollection of 12 buttons, at the half way point in the loop, there are only 6 buttons which still 
+            //have class = tableButtonEnabled. By this stage the variable used to control the loop exceeds the highest element in the loop. So instead I'm
+            //assigning the HTMLCollection to an array and looping on the contents of the array.
+            //Note also that nodelists are not (always - hence unreliable) LIVE. So while let myNodeList = document.querySelectorAll('.tableButtonEnabled')
+            //might have worked instead of getElementsByClassName, it can't be guaranteed. Array conversion is safer.
+        }
+        for (var i = 0; i < temporarilyDisableButtons.length; i++) {
+            console.log("temporarilyDisableButtons LIVE size:", temporarilyDisableButtons.length);
+            console.log("loop i:", i);
+            console.log(temporarilyDisableButtons[i]);
+            temporarilyDisableButtons[i].className = "tableButtonTemporarilyDisabled"; //change the class to temporarily disable button (visual only)
+            temporarilyDisableButtons[i].disabled = true;
+        };
+    }
+
+    function inputMandatoryWordOnInput() {    //Note: using onchange doesn't work properly as it doesn't trigger until focus is switched away from the input field. I needed the trigger to be instant!
+
+        console.log("inputNativeWord=", (document.getElementById("inputNativeWord").value.trim()));
+        console.log("inputForeignWord=", (document.getElementById("inputForeignWord").value.trim()));
+
+        if ((document.getElementById("inputNativeWord").value.trim() == "") || (document.getElementById("inputForeignWord").value.trim() == "")) {
+            document.getElementById("btnConfirm").className = "smallFloatingButtonDisabled";
+            document.getElementById("btnConfirm").disabled = true;
+        }
+        else {
+            document.getElementById("btnConfirm").className = "smallFloatingButtonEnabled";
+            document.getElementById("btnConfirm").disabled = false;
+        };
+
+//        if (document.getElementById("inputNativeWord").value.slice(-1) == "1") {
+//            console.log("ONE WAS TYPED AT END");
+//            document.getElementById("inputNativeWord").value = document.getElementById("inputNativeWord").value.slice(0, -1) + "X";
+//        };
+    };
+
+    function formInputOnKeyUp(event, fieldBeingModified) {
+        if (event.key === "Enter") {  //if the user hits enter and btnConfirm is available, hit it automatically!
+            if ((document.getElementById("inputNativeWord").value.trim() != "") && (document.getElementById("inputForeignWord").value.trim() != "")) {
+                btnConfirmOnClick();
+            };
+        };
+
+        let keyPressed = event.key;
+
+        if ("0123456789".includes(keyPressed)
+        && keyPressed.length == 1) {
+
+            switch (keyPressed) {
+                case "1":
+                    document.getElementById(fieldBeingModified).value = document.getElementById(fieldBeingModified).value.replace(keyPressed, "à");
+                    break;
+                case "2":
+                    document.getElementById(fieldBeingModified).value = document.getElementById(fieldBeingModified).value.replace(keyPressed, "â");
+                    break;
+                case "3":
+                    document.getElementById(fieldBeingModified).value = document.getElementById(fieldBeingModified).value.replace(keyPressed, "ç");
+                    break;
+                case "4":
+                    document.getElementById(fieldBeingModified).value = document.getElementById(fieldBeingModified).value.replace(keyPressed, "é");
+                    break;
+                case "5":
+                    document.getElementById(fieldBeingModified).value = document.getElementById(fieldBeingModified).value.replace(keyPressed, "è");
+                    break;
+                case "6":
+                    document.getElementById(fieldBeingModified).value = document.getElementById(fieldBeingModified).value.replace(keyPressed, "ê");
+                    break;
+                case "7":
+                    document.getElementById(fieldBeingModified).value = document.getElementById(fieldBeingModified).value.replace(keyPressed, "î");
+                    break;
+                case "8":
+                    document.getElementById(fieldBeingModified).value = document.getElementById(fieldBeingModified).value.replace(keyPressed, "ô");
+                    break;
+                case "9":
+                    document.getElementById(fieldBeingModified).value = document.getElementById(fieldBeingModified).value.replace(keyPressed, "ù");
+                    break;
+                case "0":
+                    document.getElementById(fieldBeingModified).value = document.getElementById(fieldBeingModified).value.replace(keyPressed, "û");
+            }
+
+        }
+
+        //if (fieldBeingModified == 'inputNativeWord') {
+        //    alert("Signal A!")
+        //}
+
+        //if (event.key === "1") {
+            //console.log("ONE ONE ONE!")
+            //event.target.value += "SC1";
+            //event.target.value = "SC1";
+            //event.key = "X";
+            //event.preventDefault();  //this prevents original key from being shown (i.e. "1" won't be shown if "1" is pressed)
+            //.indexOf("1");
+        //};
+
+
+    };
+
+    function btnDebugActionOnClick() {
+        console.log("DEBUG BUTTON CLICKED!");
+/*        document.getElementById("editButton1").removeEventListener("click", editTableRow); //need to get remove to work.Add a button and force it to do this only!!
+        document.getElementById("editButton0").removeEventListener("click", editTableRow);
+        document.getElementById("editButton2").removeEventListener("click", editTableRow);
+        document.getElementById("editButton3").removeEventListener("click", editTableRow);
+        document.getElementById("editButton4").removeEventListener("click", editTableRow);
+
+        document.getElementById("editButton1").removeEventListener("click", editTableRow(1)); //need to get remove to work.Add a button and force it to do this only!!
+        document.getElementById("editButton0").removeEventListener("click", editTableRow(0));
+        document.getElementById("editButton2").removeEventListener("click", editTableRow(2));
+        document.getElementById("editButton3").removeEventListener("click", editTableRow(3));
+        document.getElementById("editButton4").removeEventListener("click", editTableRow(4));
+*/
+        elem = document.getElementById("editButton6"); 
+        elem.parentNode.removeChild(elem);
+
+       // DELETE AND RE-ADD THE BUTTONS BECAUSE EVENT LISTENERS CODE IS UNPREDICTABLE!
+
+    };
+
+    function btnSaveOnClick() {
+        //depending on the table state, different paths will have to be taken.
+        //1: if DB rows have been marked for delete, then ALL rows after the first delete need to be sent to the server to have their UniqueNum changed to fill in the gap(s) left by the delete(s)
+        //2: if no DB rows are to be deleted, then go through the rows one by one, modifying or creating as appropriate
+        //3: if the higgledy-piggledy button was selected, the whole table has been re-ordered and so the whole table needs to be sent to the server to have UniqueNum field updated
+
+        console.log("SAVE Button Clicked");
+
+        //empty the array which controls the data to be sent to the backend. It will be rebuilt from table data before being posted
+        JS_ArrayOfRowsToBePosted = []
+        document.getElementById("id_currentLanguage").value = "{{EditLanguage}}"
+        //JSON_ArrayOfRowsToBePosted = []
+
+        let tableOfWordsBody = document.getElementById("tableOfWordsBody");
+        let rowMarkedForDelete = false;
+        let rowMarkedForModifyOrCreate = false;
+
+        for (let i = 0; i < tableOfWordsBody.rows.length; i++) {
+            if (tableOfWordsBody.rows[i].cells[6].innerHTML == DELETE_ROW_ICON) {
+                console.log("DELETE Path in BtnSaveClick");
+                rowMarkedForDelete = true;
+                break;
+            };
+
+            if (tableOfWordsBody.rows[i].cells[6].innerHTML == NEW_ROW_ICON
+            ||  tableOfWordsBody.rows[i].cells[6].innerHTML == MODIFY_ROW_ICON) {
+                console.log("MODIFY Path in BtnSaveClick");
+                rowMarkedForModifyOrCreate = true; //do not BREAK here because a row further down the table might be marked for delete. This path has to get priority as the changes to the DB will be more complex
+            };
+        };
+
+        if (rowMarkedForDelete) {
+            processTableRowMarkedForDelete();
+        }
+        else if (rowMarkedForModifyOrCreate) {
+            processTableRowMarkedForModifyOrCreate();
+        };
+    };
+
+    function processTableRowMarkedForDelete() {
+        //continue; you can't have continue on its own apparently! Just this comment should be enough to leave the function empty and waiting for code!
+    };
+
+    function processTableRowMarkedForModifyOrCreate() {
+
+        console.log("processTableRowMarkedForModifyOrCreate")
+
+        let js_tableOfWordsBody = document.getElementById("tableOfWordsBody");
+
+        for (let rowNum = 0; rowNum < tableOfWordsBody.rows.length; rowNum++) {
+            if (js_tableOfWordsBody.rows[rowNum].cells[6].innerHTML == MODIFY_ROW_ICON) {
+                //document.getElementById("postMethod").value = POST_MODIFY_ROW;
+                //populatePostFormAndSubmitData(rowNum);
+                addTableRowToArrayOfArrays(POST_MODIFY_ROW, rowNum);
+            }
+            else if (js_tableOfWordsBody.rows[rowNum].cells[6].innerHTML == NEW_ROW_ICON) {
+                //document.getElementById("postMethod").value = POST_CREATE_ROW;
+                //populatePostFormAndSubmitData(rowNum);
+                addTableRowToArrayOfArrays(POST_CREATE_ROW, rowNum);
+            };
+        };
+
+        JSON_ArrayOfRowsToBePosted = JSON.stringify(JS_ArrayOfRowsToBePosted);
+
+        console.log(JSON_ArrayOfRowsToBePosted);
+
+        document.getElementById("JsonStringFieldToPython").value = JSON_ArrayOfRowsToBePosted;
+        document.getElementById("btnSubmitTableData").click();
+
+    };
+
+    function addTableRowToArrayOfArrays(methodName, rowNum) {
+
+        let js_tableOfWordsBody = document.getElementById("tableOfWordsBody");
+
+        rowToBePosted =
+            [methodName,
+             js_tableOfWordsBody.rows[rowNum].cells[0].innerHTML,
+             js_tableOfWordsBody.rows[rowNum].cells[1].innerHTML,
+             js_tableOfWordsBody.rows[rowNum].cells[2].innerHTML,
+             js_tableOfWordsBody.rows[rowNum].cells[3].innerHTML,
+             js_tableOfWordsBody.rows[rowNum].cells[4].innerHTML,
+             js_editLanguage,
+             rowNum
+            ];
+
+        JS_ArrayOfRowsToBePosted.push(rowToBePosted);
+
+        console.log("JSArray:", JS_ArrayOfRowsToBePosted);
+
+    };
+
+    function populatePostFormAndSubmitData(rowNum) {  //xyz probably remove this function as i'll use array of arrays and submit one JSON string
+        document.getElementById("postNativeWord").value    = tableOfWordsBody.rows[rowNum].cells[0].innerHTML;
+        document.getElementById("postNativeHint").value    = tableOfWordsBody.rows[rowNum].cells[1].innerHTML;
+        document.getElementById("postForeignWord").value   = tableOfWordsBody.rows[rowNum].cells[2].innerHTML;
+        document.getElementById("postForeignHint").value   = tableOfWordsBody.rows[rowNum].cells[3].innerHTML;
+        document.getElementById("postForeignPlural").value = tableOfWordsBody.rows[rowNum].cells[4].innerHTML;
+        document.getElementById("postRowNum").value = rowNum;
+
+        document.getElementById("randomInputField").value = tableOfWordsBody.rows[rowNum].cells[0].innerHTML;
+
+        //alert("wait a moment after population of fields", document.getElementById("postNativeWord").value);
+
+        console.log("Automated Click on btnSubmitTableData for row", rowNum);
+        console.log("NativeWord on table:", tableOfWordsBody.rows[rowNum].cells[0].innerHTML);
+        console.log("NativeWord on SUBMIT form", document.getElementById("postNativeWord").value);
+        console.log("BEFORE Automated Click on btnSubmitTableData for row", rowNum);
+        document.getElementById("btnSubmitTableData").click();
+        console.log("AFTER Automated Click on btnSubmitTableData for row", rowNum);
+        //alert("wait a moment after the click", document.getElementById("postNativeWord").value);
+
+    };
+
+    function btnSubmitTableDataOnClick() {
+        console.log("on click event of submit button");
+        //alert("alert event of submit button");
+    };
+</script>
+
+</body>
+</html>

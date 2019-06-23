@@ -1,0 +1,88 @@
+﻿<!DOCTYPE html>
+<title>Language Learner</title>
+<link rel="stylesheet" type="text/css" href=" {{ url_for('static', filename='style1.css') }}"/> <!url_for is a FLASK function for Python>
+<h1>Welcome to the Test Centre!</h1>
+<h2>The word you sent was: {{theTestWord}}</h2>
+<h3>Current Number of Languages{{passNumberOfLanguages}}</h3>
+<h3>My arrayOfLanguages Variable: {{arrayOfLanguages}}</h3>
+<h3 id="specialH3">{{arrayOfLanguages}}</h3>
+
+<input type="text"
+       id="myText"
+       value="text here" />
+
+<input type="text"
+       id="yourText"
+       value="blank" />
+
+<div id="div1">
+    <p id="p1">This is a paragraph.</p>
+    <p id="p2">This is another paragraph.</p>
+
+    <button id="submitGuessButton" onclick="submitGuessButtonOnClick()">Take a test</button>
+
+    <button id="showLangs" onclick="createLanguageButtons()">showLangs</button>
+
+    <button id="alertButton" onclick="myAlert('broken')">alert</button>
+</div>
+
+<script>
+    var languageChoice = '';
+    createLanguageButtons();
+
+    function createLanguageButtons() {
+
+        var divContainingLanguageButtons = document.getElementById("div1");
+
+        var JSONarrayOfLanguages = {{arrayOfLanguages|tojson}};    //populate a JSON array from the (jinja?) FLASK array (originally a LIST in python)
+        var JSarrayOfLanguages = JSON.parse(JSONarrayOfLanguages); //now parse the JSON array into a JAVASCRIPT array
+
+        /*for (i in JSarrayOfLanguages) {*/           /*could also use*/ for (i = 0; i < JSarrayOfLanguages.length; i++) {
+
+            linebreak = document.createElement("br");
+//            document.body.appendChild(linebreak);
+            divContainingLanguageButtons.appendChild(linebreak);
+
+            var newButton = document.createElement("BUTTON");                   // Create a <button> element
+            var newTextNode = document.createTextNode(JSarrayOfLanguages[i]);   // Create a text node
+            newButton.appendChild(newTextNode);                                 // Append the text to <button>
+
+            newButton.setAttribute("id", JSarrayOfLanguages[i]);
+//            document.body.appendChild(newButton);                         // Append <button> to <body>
+            divContainingLanguageButtons.appendChild(newButton);            // Append <button> to parent - <div> in this case
+
+            document.getElementById(JSarrayOfLanguages[i]).style.color      = "blue";
+            document.getElementById(JSarrayOfLanguages[i]).style.height     = "100px";
+            document.getElementById(JSarrayOfLanguages[i]).style.width      = "300px";
+            document.getElementById(JSarrayOfLanguages[i]).style.margin     = "auto";          //these two lines ensure buttons appear in the middle of the screen
+            document.getElementById(JSarrayOfLanguages[i]).style.display    = "block";         //(possibly using DIV. But how? margin and block don't seem the kind of properties you'd expect!')
+            document.getElementById(JSarrayOfLanguages[i]).addEventListener("click", function () { navigateToSpecificLanguagePage(this.id); });  //comment required!
+        }
+    }
+
+    function submitGuessButtonOnClick() {
+
+        var btn = document.createElement("BUTTON");        // Create a <button> element
+        var t = document.createTextNode("CLICK ME LOOP");  // Create a text node
+        btn.appendChild(t);                                // Append the text to <button>
+        document.body.appendChild(btn);                    // Append <button> to <body
+
+        document.getElementById("myText").style.color = "red";
+        myGuess = document.getElementById("myText").value;
+        document.getElementById("yourText").value = myGuess;
+        newLocation = 'http://127.0.0.1:5000/test/' + myGuess;
+        window.location = newLocation;
+    }
+
+    function myAlert(languageString) {
+        alert("Hello! I am the " + languageString + " language!");
+     //   alert(e.target);
+     //   alert(e.target.id);
+     //   alert(this.id);
+    }
+
+    function navigateToSpecificLanguagePage(languageString) {
+        newLocation = 'http://127.0.0.1:5000/chooseTestParams/' + languageString;
+        window.location = newLocation;
+    }
+</script>

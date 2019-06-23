@@ -1,0 +1,147 @@
+﻿h1 {
+    color:green;
+}
+
+h2 {
+    color:firebrick;
+}
+button {
+    color:blue;
+}
+
+.smallFloatingButtonEnabled {
+    color: red;
+    background-color: gold;
+    display: inline-block; /*make sure button is wide enough to fit caption (noting that min-width = 200px in this case*/
+    font-family: 'Comic Sans MS';
+    font-size: medium;
+    height: 50px;
+    min-width: 200px;
+}
+
+.smallFloatingButtonEnabled:hover {
+    background-color: lawngreen;
+}
+
+.smallFloatingButtonDisabled {
+    color: black;
+    background-color: lightgrey;
+    display: inline-block; /*make sure button is wide enough to fit caption (noting that min-width = 200px in this case*/
+    font-family: 'Comic Sans MS';
+    font-size: medium;
+    height: 50px;
+    min-width: 200px;
+}
+
+.tableButtonEnabled {
+    background-color: black;
+    color: white;
+}
+
+.tableButtonEnabled:hover {
+    background-color: white;
+    color: black;
+}
+
+.tableButtonTemporarilyDisabled {
+    background-color: lightslategrey;
+    color: darkslategrey;
+}
+
+.tableButtonDisabled {
+    background-color: lightslategrey;
+    color: darkslategrey;
+}
+
+textarea {
+    background-color: lightgray;
+    color: red;
+    height: 200px;
+    width: 200px;
+    min-height: 200px;
+    min-width: 200px;
+}
+
+philTextArea {
+    color:red;
+}
+
+form {
+    color: mediumblue;
+}
+
+table {
+    border-collapse: separate;
+    border-spacing: 0;
+    color: #4a4a4d;
+    display: block;
+    font: 14px/1.4 "Helvetica Neue", Helvetica, Arial, sans-serif;
+}
+
+thead {
+    display: block;
+}
+
+tbody {
+    display: block;
+    height: 300px;
+    overflow-y: scroll; /*if the table body exceeds designated height i.e. y-axis (300px in this case) put a scroll bar on the table body*/
+}
+
+th,
+td {
+    padding: 10px 15px;
+    vertical-align: middle;
+}
+
+
+
+th:first-child {
+    border-top-left-radius: 5px;
+    text-align: left;
+}
+
+th:last-child {
+    border-top-right-radius: 5px;
+}
+
+tbody tr:nth-child(even) {
+    background: #f0f0f2;
+}
+
+td {
+    border-bottom: 1px solid #cecfd5;
+    border-right: 1px solid #cecfd5;
+}
+
+td:first-child {
+    border-left: 1px solid #cecfd5;
+    }
+
+.book-title {
+    color: #395870;
+    display: block;
+}
+
+.text-offset {
+    color: #7c7c80;
+    font-size: 12px;
+}
+
+tfoot {
+    text-align: right;
+}
+
+tfoot tr:last-child {
+    background: #f0f0f2;
+    color: #395870;
+    font-weight: bold;
+}
+
+tfoot tr:last-child td:first-child {
+    border-bottom-left-radius: 5px;
+}
+
+tfoot tr:last-child td:last-child {
+    border-bottom-right-radius: 5px;
+} 

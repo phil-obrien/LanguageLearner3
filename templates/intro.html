@@ -1,0 +1,46 @@
+﻿<!DOCTYPE html>
+<title>Language Learner</title>
+
+{% with messages = get_flashed_messages() %}
+  {% if messages %}
+    <ul class=flashes>
+    {% for message in messages %}
+        <li>{{ message }}</li>
+    {% endfor %}
+    </ul>
+  {% endif %}
+{% endwith %}
+
+<link rel="stylesheet" type="text/css" href=" {{ url_for('static', filename='style1.css') }}" /> <!url_for is a FLASK function for Python>
+
+<h1>Welcome to the Language Learner 3!</h1>
+
+<h2>This is CSS dependant</h2>
+
+<button class="smallFloatingButtonEnabled" id="btnTakeATest" onclick="btnTakeATestOnClick()">Take a test</button>
+
+<br>
+
+<button class="smallFloatingButtonEnabled" id="btnViewDictionaries" onclick="btnViewDictionariesOnClick()">View Dictionaries</button>
+
+<br>
+
+<button class="smallFloatingButtonEnabled" id="myButton2" onclick="myButton2OnClick()">Click to Create a new button</button>
+
+
+<script>
+    function btnTakeATestOnClick() {
+        window.location = 'http://127.0.0.1:5000/test';
+    }
+
+    function btnViewDictionariesOnClick() {
+        window.location = 'http://127.0.0.1:5000/dictionaries';
+    }
+
+    function myButton2OnClick() {
+        var btn = document.createElement("BUTTON");        // Create a <button> element
+        var t = document.createTextNode("CLICK ME");       // Create a text node
+        btn.appendChild(t);                                // Append the text to <button>
+        document.body.appendChild(btn);                    // Append <button> to <body>
+    }
+</script>

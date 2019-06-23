@@ -1,0 +1,398 @@
+﻿<!DOCTYPE html>
+<title>runningTest</title>
+<link rel="stylesheet" type="text/css" href=" {{ url_for('static', filename='style1.css') }}" /> <!url_for is a FLASK function for Python>
+<h1>Running Live {{flask_currentLanguage}} Test! (Test ID = {{flask_TestID}})</h1>
+
+<button id="btnShowHint" onclick="btnShowHintOnClick()">SHOW HINT! (or press 0)</button>
+
+<h2 id="h2Progress">Placeholder for Progress x/y:</h2>
+<h2 id="h2CorrectFirst">Placeholder for Total Correct on First Try:</h2>
+<h2 id="h2CorrectSubseq">Placeholder for Total Correct on Subsequent Try:</h2>
+<h2 id="h2GiveUps">Placeholder for Total Give-Ups:</h2>
+
+<h2 id="HeaderNativeHint">nativeHint:{{ flask_NativeHint }}</h2>
+<h2 id="HeaderForeignHint">foreignHint:{{ flask_ForeignHint }}</h2>
+<h2 id="HeaderForeignPlural">foreignPlural:{{ flask_ForeignPlural }}</h2>
+<h2 id="HeaderPrompt">PLACEHOLDER FOR HeaderPrompt</h2>
+
+<input type="text" id="textGuessInput" style="height: 40px; width:1000px; font-size:39px" maxlength="40" onkeyup="formInputOnKeyUp(event, 'textGuessInput')">
+<br />
+<button id="btnTryIt" onclick="btnTryItOnClick()">TRY IT!</button>
+<br />
+<button id="btnMoveIt" onclick="btnMoveItOnClick()">MOVE IT!</button>
+<br />
+<button id="btnGiveUp" onclick="btnGiveUpOnClick()">GIVE UP!</button>
+<br />
+<button id="btnSaveTest" onclick="btnSaveTestOnClick()">Save Test</button>
+
+
+<div>
+    <form action="" method="post">
+        <button id="btnIdSubmitToServer" name="btnNameSubmitToServer" value="submit">Invisible Try It!</button>
+        <br>
+        <input type="text" id="id_actionToTake" name="actionToTake">
+        <input type="text" id="id_currentNativeWord" name="currentNativeWord"> <!"name" attribute is crucial for sending data to the server! No need for flask specific stuff here! Who knew?! >
+        <input type="text" id="id_currentForeignWord" name="currentForeignWord">
+        <input type="text" id="id_resultForThisWord" name="resultForThisWord">
+    </form>
+</div>
+
+<script>
+    const const_nativeToForeign = "nativeToForeign";
+    const const_foreignToNative = "foreignToNative";
+
+    js_currentPointInTestCount          = "{{flask_currentPointInTest}}";
+    js_totalWordsInTestCount            = "{{flask_totalWordsInTest}}";
+    js_totalCorrectOnFirstTryCount      = "{{flask_totalCorrectOnFirstTryCount}}";
+    js_totalCorrectOnSubsequentTryCount = "{{flask_totalCorrectOnSubsequentTryCount}}";
+    js_totalGiveUpsCount                = "{{flask_totalGiveUpsCount}}";
+    js_actionToTake                     = "{{flask_actionToTake}}";
+    //js_translationDirectionOfTest       = "{{flask_translationDirectionOfTest}}";
+    js_translationDirectionOfWord       = "{{flask_translationDirectionOfWord}}";
+
+    js_nativeWord                       = "{{flask_NativeWord}}";
+    js_foreignWord                      = "{{flask_ForeignWord}}";
+
+    js_nativeWord                       = "{{flask_NativeWord}}";
+    js_foreignWord                      = "{{flask_ForeignWord}}";
+
+    JSON_list_direct_object_genders = {{ flask_JSON_list_direct_object_genders | tojson }};
+    JS_list_direct_object_genders = JSON.parse(JSON_list_direct_object_genders);
+    arrayOfDirectObjectGenders = []; //declare an empty array
+
+    for (var i = 0; i < JS_list_direct_object_genders.length; i++) {
+        arrayOfDirectObjectGenders.push(JS_list_direct_object_genders[i][0].toLowerCase()); //Remember - the incoming direct object genders are in the form of a 2-dim array (due to it being a list of tuples sent from Python)
+                                                                                            //The arrayOfDirectObjectGenders is a simple, single-dim array containing only the direct object genders (eg der das die)
+    };
+
+    console.log(JS_list_direct_object_genders);
+
+{#//  JSONsomethingMeaningless = {{ flask_JSON_something_not_defined_in_python | tojson }}#} //jinja is commented out with the symbols you see here!
+
+    JSON_list_special_chars = {{ flask_JSON_list_scs | tojson }};
+    JS_list_special_chars = JSON.parse(JSON_list_special_chars);
+    console.log(JS_list_special_chars);
+
+    document.getElementById("btnMoveIt").disabled = true;
+    document.getElementById("textGuessInput").focus();
+
+    document.getElementById("h2Progress").innerText = "Progress: " + js_currentPointInTestCount + "/" + js_totalWordsInTestCount;
+    document.getElementById("h2CorrectFirst").innerText = "Total Correct on First Try: " + js_totalCorrectOnFirstTryCount;
+    document.getElementById("h2CorrectSubseq").innerText = "Total Correct on Subsequent Try: " + js_totalCorrectOnSubsequentTryCount;
+    document.getElementById("h2GiveUps").innerText = "Total Give-Ups: " + js_totalGiveUpsCount;
+
+    document.getElementById("HeaderNativeHint").style.visibility = "hidden";
+    document.getElementById("HeaderForeignHint").style.visibility = "hidden";
+
+    if (js_translationDirectionOfWord == const_nativeToForeign) {
+        document.getElementById("HeaderForeignPlural").style.visibility = "hidden"
+    }
+    else {
+        document.getElementById("HeaderForeignPlural").style.visibility = "visible"
+    }
+
+
+    if (js_translationDirectionOfWord == const_nativeToForeign) {
+        document.getElementById("HeaderPrompt").innerText = "What is the {{flask_currentLanguage}} for Native: " + js_nativeWord + "?";
+    }
+    else if (js_translationDirectionOfWord == const_foreignToNative) {
+        document.getElementById("HeaderPrompt").innerText = "What is the Native for {{flask_currentLanguage}}: " + js_foreignWord + "?";
+    };
+
+    if (js_actionToTake == "ProcessWord") {
+        document.getElementById("id_resultForThisWord").value = "NoneYet";
+    };
+
+    if (js_actionToTake == "EndTest") {
+        document.getElementById("h2Progress").innerText = "TEST COMPLETE!! Progress: " + js_currentPointInTestCount + "/" + js_totalWordsInTestCount;
+        document.getElementById("btnTryIt").disabled = true;
+    }
+
+//**************************************************************************
+    function btnMoveItOnClick() {
+//**************************************************************************
+        if (js_translationDirectionOfWord == const_nativeToForeign) {
+            document.getElementById("textGuessInput").value = js_foreignWord;
+        }
+        else if (js_translationDirectionOfWord == const_foreignToNative) {
+            document.getElementById("textGuessInput").value = js_nativeWord;
+        }
+    };
+
+//**************************************************************************
+    function btnTryItOnClick() {
+//**************************************************************************
+        if (js_translationDirectionOfWord == const_nativeToForeign) {
+            js_targetWord = js_foreignWord;
+        }
+        else if (js_translationDirectionOfWord == const_foreignToNative) {
+            js_targetWord = js_nativeWord;
+        };
+
+        if (document.getElementById("textGuessInput").value.trim().toLowerCase() == js_targetWord.toLowerCase()) { // did the user guess right?
+            //alert("yeah they are equal");
+
+            if (document.getElementById("btnTryIt").textContent == "TRY IT!") { //the user guessed the correct answer on the FIRST go (we know this because the button still says TRY IT!)
+                document.getElementById("id_resultForThisWord").value = "RightFirstTime";
+            }
+            else if (document.getElementById("btnTryIt").textContent == "TRY IT AGAIN!") { //the user guessed the correct answer on a SUBSEQUENT go (we know this because the button now says TRY IT AGAIN!)
+                document.getElementById("id_resultForThisWord").value = "RightSubsequentTime";
+            };
+
+            document.getElementById("id_actionToTake").value = "ProcessWord";
+            document.getElementById("btnIdSubmitToServer").click();
+        }
+        else {
+            alertGenderIsWrong = false;
+            alertAccentsAreWrong = false;
+
+            if (onlyGenderIsWrong(document.getElementById("textGuessInput").value, js_targetWord)) {
+                alertGenderIsWrong = true;
+                alert("Gender is wrong(but accents might be right)");
+            }
+            if (onlyAccentsAreWrong(document.getElementById("textGuessInput").value, js_targetWord)) {
+                alertAccentsAreWrong = true;
+                alert("Accents are wrong (but gender (if applicable) might be right)")
+            }
+            alert("NO they are NOT equal");
+            document.getElementById("btnTryIt").textContent = "TRY IT AGAIN!"; //change the caption of the button
+            document.getElementById("id_resultForThisWord").value = "TryingAgain";
+            document.getElementById("textGuessInput").focus();
+        }
+    };
+
+//**************************************************************************
+    function onlyGenderIsWrong(userWord, dictWord) {
+//**************************************************************************
+        userWord = userWord.trim().toLowerCase();
+        dictWord = dictWord.trim().toLowerCase();
+        var validDefiniteArticlesFound = 0;
+
+        index1 = userWord.indexOf(' ');
+
+        if (index1 != -1) {     // we did find a space char
+
+            //remove the "the" if there is one, from both userWord and targetWord then test bit after "the"
+            //Note that if you take "the" off one word you probably should remove it from other word too, even if it's a different "the" (eg "die" "der" or "das")
+            console.log("user word article" + userWord.slice(0, index1));
+            if (arrayOfDirectObjectGenders.includes(userWord.slice(0, index1))) {
+                var userThe = userWord.slice(0, index1);
+                //console.log("add 1 in user area");
+                validDefiniteArticlesFound += 1;
+            }
+            else {
+                return false //if we don't have a valid foreign word for "the", no point in checking if the user has guessed an incorrect direct object gender
+            };
+
+            userWord = userWord.slice(index1 + 1); // slice the string from the first char after the space until the end (2nd param omitted => until last char)
+            console.log("userWord:" + userWord);
+        };
+
+        index1 = dictWord.indexOf(' ');
+
+        if (index1 != -1) {     // we did find a space char
+
+            console.log("dict word article" + dictWord.slice(0, index1));
+            if (arrayOfDirectObjectGenders.includes(dictWord.slice(0, index1))) {
+                var dictThe = dictWord.slice(0, index1);
+                //console.log("add 1 in dict area");
+                validDefiniteArticlesFound += 1;
+            }
+            else {
+                return false //if we don't have a valid foreign word for "the", no point in checking if the user has guessed an incorrect direct object gender
+            }
+
+            dictWord = dictWord.slice(index1 + 1) // slice the string from the first char after the space until the end (2nd param omitted => until last char)
+            console.log("dictWord:" + dictWord);
+        };
+
+        //before allowing the user the luxury of knowing that they got the noun right but the gender wrong, we need to make sure that:
+        // 1) they actually got the gender wrong
+        // 2) the only thing they got wrong with the noun were the accents (otherwise the attempt is deemed "completely wrong" and no aid is given)
+
+        if ((userThe == dictThe) || (validDefiniteArticlesFound != 2)) {
+            return false;
+        };
+
+        for (i = 0; i < JS_list_special_chars.length; i++) {
+            let specialChar = JS_list_special_chars[i][1];
+            let genericChar = JS_list_special_chars[i][2];
+            console.log("userWord:" + userWord);
+            console.log("dictWord:" + dictWord);
+            console.log("specialChar:" + specialChar);
+            console.log("genericChar:" + genericChar);
+            console.log("JS_list_special_chars[i][1]:" + JS_list_special_chars[i][1]);
+            let simplifiedString = userWord.split(specialChar).join(genericChar); // The str.split(x).join(y) technique replaces x's with y's in string str (much clearer and more useable than the terrible Regex)
+            userWord = simplifiedString;
+            simplifiedString = dictWord.split(specialChar).join(genericChar);
+            dictWord = simplifiedString;
+            console.log("userWord (replaced):" + userWord);
+            console.log("dictWord (replaced):" + dictWord);
+        };
+
+        if (userWord == dictWord) {
+            return true;
+        }
+        else {
+            return false;
+        };
+    };
+
+//**************************************************************************
+    function onlyAccentsAreWrong(userWord, dictWord) {
+//**************************************************************************
+        var validDefiniteArticlesFound = 0; //only proceed with the "only accents wrong" test if exactly 0 or 2 valid articles are present
+        userWord = userWord.trim().toLowerCase();
+        dictWord = dictWord.trim().toLowerCase();
+        simplifiedString = "";
+        simplifiedUserWord = "";
+        simplifiedDictWord = "";
+
+        // The first thing to do is to eliminate both the definite article ("the") in both the user word and the dict word
+        // if they are both present. If only one is present don't bother with the accent test (or the gender test). A definite
+        // articles are deemed valid if they are both present on the DIRECT_OBJECT_GENDER file (specific to the current language). 
+
+        index1 = userWord.indexOf(' ');
+
+        if (index1 != -1) {     // we did find a space char
+
+            //remove the "the" if there is one, from both userWord and targetWord then test bit after "the"
+            //Note that if you take "the" off one word you probably should remove it from other word too, even if it's a different "the" (eg "die" "der" or "das")
+            console.log("user word article" + userWord.slice(0, index1));
+            if (arrayOfDirectObjectGenders.includes(userWord.slice(0, index1))) {
+                console.log("add 1 in user area");
+                validDefiniteArticlesFound += 1;
+            };
+
+            userWord = userWord.slice(index1 + 1) // slice the string from the first char after the space until the end (2nd param omitted => until last char)
+            console.log("userWord:" + userWord);
+        };
+
+        index1 = dictWord.indexOf(' ');
+
+        if (index1 != -1) {     // we did find a space char
+
+            console.log("dict word article" + dictWord.slice(0, index1));
+            if (arrayOfDirectObjectGenders.includes(dictWord.slice(0, index1))) {
+                console.log("add 1 in dict area");
+                validDefiniteArticlesFound += 1;
+            };
+
+            dictWord = dictWord.slice(index1 + 1) // slice the string from the first char after the space until the end (2nd param omitted => until last char)
+            console.log("dictWord:" + dictWord);
+        };
+
+        console.log("validDefiniteArticlesFound" + validDefiniteArticlesFound);
+        if (validDefiniteArticlesFound == 1) { //if a valid gender is attached to one word but not the other, the "guess attempt" by the user is too far off to warrant an "accent only" check
+            return false;
+        };
+
+        console.log("array len" + JS_list_special_chars.length);
+        simplifiedUserWord = userWord;
+        simplifiedDictWord = dictWord;
+        for (i = 0; i < JS_list_special_chars.length; i++) {
+            let specialChar = JS_list_special_chars[i][1];
+            let genericChar = JS_list_special_chars[i][2];
+            console.log("userWord:" + userWord);
+            console.log("dictWord:" + dictWord);
+            console.log("specialChar:" + specialChar);
+            console.log("genericChar:" + genericChar);
+            console.log("JS_list_special_chars[i][1]:" + JS_list_special_chars[i][1]);
+            simplifiedUserWord = simplifiedUserWord.split(specialChar).join(genericChar); // The str.split(x).join(y) technique replaces x's with y's in string str (much clearer and more useable than the terrible Regex)
+            simplifiedDictWord = simplifiedDictWord.split(specialChar).join(genericChar); // The str.split(x).join(y) technique replaces x's with y's in string str (much clearer and more useable than the terrible Regex)
+            console.log("userWord (original):" + userWord);
+            console.log("dictWord (original):" + dictWord);
+            console.log("userWord (simplified):" + simplifiedUserWord);
+            console.log("dictWord (simplified):" + simplifiedDictWord);
+        };
+
+        console.log("userWord:" + userWord)
+        console.log("dictWord:" + dictWord)
+
+        if ((userWord != dictWord) && (simplifiedUserWord == simplifiedDictWord)) {
+//            alert("onlyAccentsAreWrong")
+            return true
+        }
+        else {
+//            alert("Bigger problems than just the (definite article neutral) accents being wrong!")
+            return false
+        };
+    };
+
+//**************************************************************************
+    function btnGiveUpOnClick() {
+//**************************************************************************
+        if (js_translationDirectionOfWord == const_nativeToForeign) {
+            js_targetWord = js_foreignWord;
+        }
+        else if (js_translationDirectionOfWord == const_foreignToNative) {
+            js_targetWord = js_nativeWord;
+        };
+
+        alert("Correct Answer = " + js_targetWord)
+        document.getElementById("id_actionToTake").value = "ProcessWord";
+        document.getElementById("id_resultForThisWord").value = "GiveUp";
+        document.getElementById("btnIdSubmitToServer").click();
+    };
+
+//**************************************************************************
+    function btnShowHintOnClick() {
+//**************************************************************************
+        if (js_translationDirectionOfWord == const_nativeToForeign) {
+            document.getElementById("HeaderNativeHint").style.visibility = "visible";
+        }
+        else if (js_translationDirectionOfWord == const_foreignToNative) {
+            document.getElementById("HeaderForeignHint").style.visibility = "visible";
+        }
+    };
+
+//**************************************************************************
+    function formInputOnKeyUp(event, fieldBeingModified) {
+//**************************************************************************
+        if (event.key === "Enter") {  //if the user hits enter in the textGuessInput field, hit btnTryIt button automatically!!
+            if (document.getElementById("textGuessInput").value.trim() != "") {
+                btnTryItOnClick();
+            };
+        };
+ 
+        let keyPressed = event.key;
+
+        if ("0123456789".includes(keyPressed)
+            && keyPressed.length == 1) {
+
+            switch (keyPressed) {
+                case "1":
+                    document.getElementById(fieldBeingModified).value = document.getElementById(fieldBeingModified).value.replace(keyPressed, "ä");
+                    break;
+                case "2":
+                    document.getElementById(fieldBeingModified).value = document.getElementById(fieldBeingModified).value.replace(keyPressed, "ö");
+                    break;
+                case "3":
+                    document.getElementById(fieldBeingModified).value = document.getElementById(fieldBeingModified).value.replace(keyPressed, "ü");
+                    break;
+                case "4":
+                    document.getElementById(fieldBeingModified).value = document.getElementById(fieldBeingModified).value.replace(keyPressed, "ß");
+                    break;
+                case "5":
+                    document.getElementById(fieldBeingModified).value = document.getElementById(fieldBeingModified).value.replace(keyPressed, "Ä");
+                    break;
+                case "6":
+                    document.getElementById(fieldBeingModified).value = document.getElementById(fieldBeingModified).value.replace(keyPressed, "Ö");
+                    break;
+                case "7":
+                    document.getElementById(fieldBeingModified).value = document.getElementById(fieldBeingModified).value.replace(keyPressed, "Ü");
+                    break;
+                case "8":
+                    document.getElementById(fieldBeingModified).value = document.getElementById(fieldBeingModified).value.replace(keyPressed, "ô");
+                    break;
+                case "9":
+                    document.getElementById(fieldBeingModified).value = document.getElementById(fieldBeingModified).value.replace(keyPressed, "ù");
+                    break;
+                case "0":
+                    document.getElementById(fieldBeingModified).value = document.getElementById(fieldBeingModified).value.replace(keyPressed, "");
+                    btnShowHintOnClick();
+            }
+
+        }
+    }
+</script>
