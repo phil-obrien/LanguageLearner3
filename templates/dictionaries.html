@@ -2,57 +2,68 @@
 <title>Language Learner - Dictionaries</title>
 <link rel="stylesheet" type="text/css" href=" {{ url_for('static', filename='style1.css') }}" /> <!url_for is a FLASK function for Python>
 
-<h1>Language Learner - Dictionaries</h1>
-<h2>The word you sent was: {{theTestWord}}</h2>
-<h3>Current Number of Languages{{passNumberOfLanguages}}</h3>
-<h3>My arrayOfLanguages Variable: {{arrayOfLanguages}}</h3>
-<h3 id="specialH3">{{arrayOfLanguages}}</h3>
+<h1 align="center">Language Learner 3 - Dictionaries</h1>
+<h3 align="center">Current Number of Languages: {{flask_numberOfLanguages}}</h3>
 
-<div id="div1">
-    <button id="btnAddNewDict" height = "100px" width = "300px" onclick="btnAddNewDictOnClick()">Add New Dictionary</button>
+<div id="div1" align="center">
+    <button id="btnAddNewDict" height="100px" width="300px" align="center" onclick="btnAddNewDictOnClick()">Add New Dictionary</button>
 
     <br>
 
     <h2 align="center">View/Modify Current Dictionaries</h2>
 </div>
 
+<!*******************************************************************************************************>
+<!************************** END OF HTML ****************************************************************>
+<!*******************************************************************************************************>
+
 <script>
 
     var languageChoice = '';
     createLanguageButtons();
 
+//**************************************************************************
     function createLanguageButtons() {
+//**************************************************************************
 
         var divContainingLanguageButtons = document.getElementById("div1");
 
-        var JSONarrayOfLanguages = {{arrayOfLanguages|tojson}};     //populate a JSON array from the (jinja?) FLASK array (originally a LIST in python)
-        var JSarrayOfLanguages = JSON.parse(JSONarrayOfLanguages);  //now parse the JSON array into a JAVASCRIPT array
+        var JSON_arrayOfLanguages = {{flask_arrayOfLanguages|tojson}};     //populate a JSON array from the (jinja?) FLASK array (originally a LIST in python)
+        var JS_arrayOfLanguages = JSON.parse(JSON_arrayOfLanguages);       //now parse the JSON array into a JAVASCRIPT array
 
         /*for (i in JSarrayOfLanguages) {*/           /*could also use*/
-        for (i = 0; i < JSarrayOfLanguages.length; i++) {
+        for (i = 0; i < JS_arrayOfLanguages.length; i++) {
 
             linebreak = document.createElement("br");
         //            document.body.appendChild(linebreak);
             divContainingLanguageButtons.appendChild(linebreak);
 
             var newButton = document.createElement("BUTTON");                   // Create a <button> element
-            var newTextNode = document.createTextNode(JSarrayOfLanguages[i]);   // Create a text node
+            var newTextNode = document.createTextNode(JS_arrayOfLanguages[i]);   // Create a text node
             newButton.appendChild(newTextNode);                                 // Append the text to <button>
 
-            newButton.setAttribute("id", JSarrayOfLanguages[i]);
+            newButton.setAttribute("id", JS_arrayOfLanguages[i]);
             //            document.body.appendChild(newButton);                         // Append <button> to <body>
             divContainingLanguageButtons.appendChild(newButton);            // Append <button> to parent - <div> in this case
 
-            document.getElementById(JSarrayOfLanguages[i]).style.color = "blue";
-            document.getElementById(JSarrayOfLanguages[i]).style.height = "100px";
-            document.getElementById(JSarrayOfLanguages[i]).style.width = "300px";
-            document.getElementById(JSarrayOfLanguages[i]).style.margin = "auto";          //these two lines ensure buttons appear in the middle of the screen
-            document.getElementById(JSarrayOfLanguages[i]).style.display = "block";         //(possibly using DIV. But how? margin and block don't seem the kind of properties you'd expect!')
-            document.getElementById(JSarrayOfLanguages[i]).addEventListener("click", function () { navigateToSpecificDictionaryPage(this.id); });  //comment required!
+            document.getElementById(JS_arrayOfLanguages[i]).style.color = "blue";
+            document.getElementById(JS_arrayOfLanguages[i]).style.height = "100px";
+            document.getElementById(JS_arrayOfLanguages[i]).style.width = "300px";
+            document.getElementById(JS_arrayOfLanguages[i]).style.margin = "auto";          //these two lines ensure buttons appear in the middle of the screen
+            document.getElementById(JS_arrayOfLanguages[i]).style.display = "block";         //(possibly using DIV. But how? margin and block don't seem the kind of properties you'd expect!')
+            document.getElementById(JS_arrayOfLanguages[i]).addEventListener("click", function () { navigateToSpecificDictionaryPage(this.id); });  //comment required!
       }
+    };
+
+//**************************************************************************
+    function btnAddNewDictOnClick() {
+//**************************************************************************
+        alert("This functionality has not yet been developed!\nTo add a new language you must:\n1) Open DB Browser for SQLite\n2) Add a new row to DICT_RECORD file (this file stores the words for a Language) specifying the new language\n3) Once one row exists for the new language, it will automatically appear here as a button, so you can then use this Application to add new words to that Language!");
     }
 
+//**************************************************************************
     function navigateToSpecificDictionaryPage(languageString) {
+//**************************************************************************
         newLocation = 'http://127.0.0.1:5000/viewModifyDictionary/' + languageString;
         window.location = newLocation;
     }

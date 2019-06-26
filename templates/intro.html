@@ -3,44 +3,54 @@
 
 {% with messages = get_flashed_messages() %}
   {% if messages %}
-    <ul class=flashes>
+<ul class=flashes>
     {% for message in messages %}
-        <li>{{ message }}</li>
+    <li>{{ message }}</li>
     {% endfor %}
-    </ul>
+</ul>
   {% endif %}
 {% endwith %}
 
 <link rel="stylesheet" type="text/css" href=" {{ url_for('static', filename='style1.css') }}" /> <!url_for is a FLASK function for Python>
 
-<h1>Welcome to the Language Learner 3!</h1>
+<h1 align="center">Welcome to Language Learner 3!</h1>
 
-<h2>This is CSS dependant</h2>
+<h2 align="center">Please Choose From One Of The Options Below!</h2>
 
-<button class="smallFloatingButtonEnabled" id="btnTakeATest" onclick="btnTakeATestOnClick()">Take a test</button>
+<div align="center">
+    <button class="smallFloatingButtonEnabled" id="btnTakeATest" align="center" onclick="btnTakeATestOnClick()">Take a test</button>
 
-<br>
+    <br>
 
-<button class="smallFloatingButtonEnabled" id="btnViewDictionaries" onclick="btnViewDictionariesOnClick()">View Dictionaries</button>
+    <button class="smallFloatingButtonEnabled" id="btnViewModDictionaries" align="center" onclick="btnViewModDictionariesOnClick()">View/Modify Dictionaries</button>
 
-<br>
+    <br>
 
-<button class="smallFloatingButtonEnabled" id="myButton2" onclick="myButton2OnClick()">Click to Create a new button</button>
+    <button class="smallFloatingButtonEnabled" id="btnViewStatsFromOldTests" align="center" onclick="btnViewStatsFromOldTestsOnClick()">View Stats From Old Tests</button>
+</div>
 
+<!*******************************************************************************************************>
+<!************************** END OF HTML ****************************************************************>
+<!*******************************************************************************************************>
 
 <script>
+
+//**************************************************************************
     function btnTakeATestOnClick() {
+//**************************************************************************
         window.location = 'http://127.0.0.1:5000/test';
     }
 
-    function btnViewDictionariesOnClick() {
+//**************************************************************************
+    function btnViewModDictionariesOnClick() {
+//**************************************************************************
         window.location = 'http://127.0.0.1:5000/dictionaries';
     }
 
-    function myButton2OnClick() {
-        var btn = document.createElement("BUTTON");        // Create a <button> element
-        var t = document.createTextNode("CLICK ME");       // Create a text node
-        btn.appendChild(t);                                // Append the text to <button>
-        document.body.appendChild(btn);                    // Append <button> to <body>
+//**************************************************************************
+    function btnViewStatsFromOldTestsOnClick() {
+//**************************************************************************
+        alert("Sorry, this functionality has not yet been implemented!")
     }
+
 </script>

@@ -3,43 +3,55 @@
 <link rel="stylesheet" type="text/css" href=" {{ url_for('static', filename='style1.css') }}" /> <!url_for is a FLASK function for Python>
 <h1>Running Live {{flask_currentLanguage}} Test! (Test ID = {{flask_TestID}})</h1>
 
-<button id="btnShowHint" onclick="btnShowHintOnClick()">SHOW HINT! (or press 0)</button>
-
-<h2 id="h2Progress">Placeholder for Progress x/y:</h2>
+<h2 id="hdrProgressAndKeyShortcuts">Placeholder for Progress x/y:</h2>
 <h2 id="h2CorrectFirst">Placeholder for Total Correct on First Try:</h2>
 <h2 id="h2CorrectSubseq">Placeholder for Total Correct on Subsequent Try:</h2>
 <h2 id="h2GiveUps">Placeholder for Total Give-Ups:</h2>
 
-<h2 id="HeaderNativeHint">nativeHint:{{ flask_NativeHint }}</h2>
-<h2 id="HeaderForeignHint">foreignHint:{{ flask_ForeignHint }}</h2>
-<h2 id="HeaderForeignPlural">foreignPlural:{{ flask_ForeignPlural }}</h2>
-<h2 id="HeaderPrompt">PLACEHOLDER FOR HeaderPrompt</h2>
+<div>
+    <h2 id="HeaderPrompt">PLACEHOLDER FOR HeaderPrompt</h2>   <!e.g. "Enter the FRENCH term for Native term: hello">
+</div>
 
 <input type="text" id="textGuessInput" style="height: 40px; width:1000px; font-size:39px" maxlength="40" onkeyup="formInputOnKeyUp(event, 'textGuessInput')">
 <br />
-<button id="btnTryIt" onclick="btnTryItOnClick()">TRY IT!</button>
+<button class="smallFloatingButtonEnabled" id="btnTryIt" onclick="btnTryItOnClick()">JavaScript Assigns Caption Value To This Button</button>
 <br />
-<button id="btnMoveIt" onclick="btnMoveItOnClick()">MOVE IT!</button>
+<button class="smallFloatingButtonEnabled" id="btnShowHint" onclick="btnShowHintOnClick()">CLICK HERE (or press #) TO REVEAL HINT!</button>
 <br />
-<button id="btnGiveUp" onclick="btnGiveUpOnClick()">GIVE UP!</button>
-<br />
-<button id="btnSaveTest" onclick="btnSaveTestOnClick()">Save Test</button>
-
-
 <div>
+    <h1 id="hdrHint">Hint: (not revealed)</h1>
+</div>
+<br />
+<button id="btnGiveUp" class="smallFloatingButtonEnabled" onclick="btnGiveUpOnClick()">GIVE UP!</button>
+<br />
+<button id="btnSaveTest" class="smallFloatingButtonEnabled" onclick="btnSaveTestOnClick()">Save Test</button>
+<br />
+<button id="btnMoveIt" class="smallFloatingButtonEnabled" onclick="btnMoveItOnClick()">CHEAT (for debug ;-) only)!</button>
+
+
+<!********** The following DIV contains a FORM which is reponsible for submitting data to the backend **********>
+<div id="divCommitBits">
     <form action="" method="post">
         <button id="btnIdSubmitToServer" name="btnNameSubmitToServer" value="submit">Invisible Try It!</button>
         <br>
-        <input type="text" id="id_actionToTake" name="actionToTake">
-        <input type="text" id="id_currentNativeWord" name="currentNativeWord"> <!"name" attribute is crucial for sending data to the server! No need for flask specific stuff here! Who knew?! >
-        <input type="text" id="id_currentForeignWord" name="currentForeignWord">
-        <input type="text" id="id_resultForThisWord" name="resultForThisWord">
+        <input type="text" id="txtActionToTake" name="actionToTake"> <!"name" attribute is crucial for sending data to the server! No need for flask specific stuff here! Who knew?! >
+        <input type="text" id="txtResultForThisWord" name="resultForThisWord">
     </form>
 </div>
 
+<!*******************************************************************************************************>
+<!************************** END OF HTML ****************************************************************>
+<!*******************************************************************************************************>
+
 <script>
+    document.getElementById("divCommitBits").style.visibility = "hidden";
+
     const const_nativeToForeign = "nativeToForeign";
     const const_foreignToNative = "foreignToNative";
+
+    const tryIt      = "TRY IT (Or hit ENTER in the text field above)!"; // btnTryIt will have this CAPTION value first time in for EACH word
+    const tryItAgain = "TRY IT AGAIN! (Or hit ENTER)";                   // btnTryIt will update to this CAPTION value if the user guesses wrong first time
+    document.getElementById("btnTryIt").textContent = tryIt;
 
     js_currentPointInTestCount          = "{{flask_currentPointInTest}}";
     js_totalWordsInTestCount            = "{{flask_totalWordsInTest}}";
@@ -47,18 +59,17 @@
     js_totalCorrectOnSubsequentTryCount = "{{flask_totalCorrectOnSubsequentTryCount}}";
     js_totalGiveUpsCount                = "{{flask_totalGiveUpsCount}}";
     js_actionToTake                     = "{{flask_actionToTake}}";
-    //js_translationDirectionOfTest       = "{{flask_translationDirectionOfTest}}";
     js_translationDirectionOfWord       = "{{flask_translationDirectionOfWord}}";
 
     js_nativeWord                       = "{{flask_NativeWord}}";
     js_foreignWord                      = "{{flask_ForeignWord}}";
-
-    js_nativeWord                       = "{{flask_NativeWord}}";
-    js_foreignWord                      = "{{flask_ForeignWord}}";
+    js_NativeHint                       = "{{flask_NativeHint}}";
+    js_ForeignHint                      = "{{flask_ForeignHint}}";
+    js_ForeignPlural                    = "{{flask_ForeignPlural}}";
 
     JSON_list_direct_object_genders = {{ flask_JSON_list_direct_object_genders | tojson }};
-    JS_list_direct_object_genders = JSON.parse(JSON_list_direct_object_genders);
-    arrayOfDirectObjectGenders = []; //declare an empty array
+    JS_list_direct_object_genders   = JSON.parse(JSON_list_direct_object_genders);
+    arrayOfDirectObjectGenders      = []; //declare an empty array
 
     for (var i = 0; i < JS_list_direct_object_genders.length; i++) {
         arrayOfDirectObjectGenders.push(JS_list_direct_object_genders[i][0].toLowerCase()); //Remember - the incoming direct object genders are in the form of a 2-dim array (due to it being a list of tuples sent from Python)
@@ -69,42 +80,36 @@
 
 {#//  JSONsomethingMeaningless = {{ flask_JSON_something_not_defined_in_python | tojson }}#} //jinja is commented out with the symbols you see here!
 
-    JSON_list_special_chars = {{ flask_JSON_list_scs | tojson }};
-    JS_list_special_chars = JSON.parse(JSON_list_special_chars);
-    console.log(JS_list_special_chars);
+    JSON_listOfSpecialChars = {{ flask_listOfSpecialChars | tojson }};
+    JS_listOfSpecialChars   = JSON.parse(JSON_listOfSpecialChars);
+    console.log("JS_listOfSpecialChars:" + JS_listOfSpecialChars);
 
-    document.getElementById("btnMoveIt").disabled = true;
     document.getElementById("textGuessInput").focus();
 
-    document.getElementById("h2Progress").innerText = "Progress: " + js_currentPointInTestCount + "/" + js_totalWordsInTestCount;
-    document.getElementById("h2CorrectFirst").innerText = "Total Correct on First Try: " + js_totalCorrectOnFirstTryCount;
+    document.getElementById("hdrProgressAndKeyShortcuts").innerText = "Progress: " + js_currentPointInTestCount + "/" + js_totalWordsInTestCount;
+    document.getElementById("hdrProgressAndKeyShortcuts").innerText += unfurlSpecialCharArray(); // appends string showing special chars for current language e.g. -- Keyboard Shortcuts:[1=à][5=é][6=ö]
+    document.getElementById("h2CorrectFirst").innerText  = "Total Correct on First Try: " + js_totalCorrectOnFirstTryCount;
     document.getElementById("h2CorrectSubseq").innerText = "Total Correct on Subsequent Try: " + js_totalCorrectOnSubsequentTryCount;
-    document.getElementById("h2GiveUps").innerText = "Total Give-Ups: " + js_totalGiveUpsCount;
-
-    document.getElementById("HeaderNativeHint").style.visibility = "hidden";
-    document.getElementById("HeaderForeignHint").style.visibility = "hidden";
-
-    if (js_translationDirectionOfWord == const_nativeToForeign) {
-        document.getElementById("HeaderForeignPlural").style.visibility = "hidden"
-    }
-    else {
-        document.getElementById("HeaderForeignPlural").style.visibility = "visible"
-    }
+    document.getElementById("h2GiveUps").innerText       = "Total Give-Ups: " + js_totalGiveUpsCount;
 
 
     if (js_translationDirectionOfWord == const_nativeToForeign) {
-        document.getElementById("HeaderPrompt").innerText = "What is the {{flask_currentLanguage}} for Native: " + js_nativeWord + "?";
+        document.getElementById("HeaderPrompt").innerText = "Enter the {{flask_currentLanguage}} term for Native term: " + js_nativeWord;
     }
     else if (js_translationDirectionOfWord == const_foreignToNative) {
-        document.getElementById("HeaderPrompt").innerText = "What is the Native for {{flask_currentLanguage}}: " + js_foreignWord + "?";
+        document.getElementById("HeaderPrompt").innerText = "Enter the Native term for the {{flask_currentLanguage}} term: " + js_foreignWord + "?"
+
+        if (js_ForeignPlural.trim() != "") {
+            document.getElementById("HeaderPrompt").innerText += " (Plural of this word = " + js_ForeignPlural + ")"
+        }
     };
 
     if (js_actionToTake == "ProcessWord") {
-        document.getElementById("id_resultForThisWord").value = "NoneYet";
+        document.getElementById("txtResultForThisWord").value = "NoneYet";
     };
 
     if (js_actionToTake == "EndTest") {
-        document.getElementById("h2Progress").innerText = "TEST COMPLETE!! Progress: " + js_currentPointInTestCount + "/" + js_totalWordsInTestCount;
+        document.getElementById("hdrProgressAndKeyShortcuts").innerText = "TEST COMPLETE!! Progress: " + js_currentPointInTestCount + "/" + js_totalWordsInTestCount;
         document.getElementById("btnTryIt").disabled = true;
     }
 
@@ -132,14 +137,15 @@
         if (document.getElementById("textGuessInput").value.trim().toLowerCase() == js_targetWord.toLowerCase()) { // did the user guess right?
             //alert("yeah they are equal");
 
-            if (document.getElementById("btnTryIt").textContent == "TRY IT!") { //the user guessed the correct answer on the FIRST go (we know this because the button still says TRY IT!)
-                document.getElementById("id_resultForThisWord").value = "RightFirstTime";
+            if (document.getElementById("btnTryIt").textContent == tryIt) { //the user guessed the correct answer on the FIRST go (we know this because the button still says "TRY IT (plus jargon!)"!)
+                document.getElementById("txtResultForThisWord").value = "RightFirstTime";
+                //alert("right first time!!")
             }
-            else if (document.getElementById("btnTryIt").textContent == "TRY IT AGAIN!") { //the user guessed the correct answer on a SUBSEQUENT go (we know this because the button now says TRY IT AGAIN!)
-                document.getElementById("id_resultForThisWord").value = "RightSubsequentTime";
+            else if (document.getElementById("btnTryIt").textContent == tryItAgain) { //the user guessed the correct answer on a SUBSEQUENT go (we know this because the button now says "TRY IT AGAIN!")
+                document.getElementById("txtResultForThisWord").value = "RightSubsequentTime";
             };
 
-            document.getElementById("id_actionToTake").value = "ProcessWord";
+            document.getElementById("txtActionToTake").value = "ProcessWord";
             document.getElementById("btnIdSubmitToServer").click();
         }
         else {
@@ -155,8 +161,8 @@
                 alert("Accents are wrong (but gender (if applicable) might be right)")
             }
             alert("NO they are NOT equal");
-            document.getElementById("btnTryIt").textContent = "TRY IT AGAIN!"; //change the caption of the button
-            document.getElementById("id_resultForThisWord").value = "TryingAgain";
+            document.getElementById("btnTryIt").textContent = tryItAgain; //change the caption of the button to the const defined at top of JS
+            document.getElementById("txtResultForThisWord").value = "TryingAgain";
             document.getElementById("textGuessInput").focus();
         }
     };
@@ -214,14 +220,14 @@
             return false;
         };
 
-        for (i = 0; i < JS_list_special_chars.length; i++) {
-            let specialChar = JS_list_special_chars[i][1];
-            let genericChar = JS_list_special_chars[i][2];
+        for (i = 0; i < JS_listOfSpecialChars.length; i++) {
+            let specialChar = JS_listOfSpecialChars[i][1];
+            let genericChar = JS_listOfSpecialChars[i][2];
             console.log("userWord:" + userWord);
             console.log("dictWord:" + dictWord);
             console.log("specialChar:" + specialChar);
             console.log("genericChar:" + genericChar);
-            console.log("JS_list_special_chars[i][1]:" + JS_list_special_chars[i][1]);
+            console.log("JS_listOfSpecialChars[i][1]:" + JS_listOfSpecialChars[i][1]);
             let simplifiedString = userWord.split(specialChar).join(genericChar); // The str.split(x).join(y) technique replaces x's with y's in string str (much clearer and more useable than the terrible Regex)
             userWord = simplifiedString;
             simplifiedString = dictWord.split(specialChar).join(genericChar);
@@ -250,7 +256,7 @@
 
         // The first thing to do is to eliminate both the definite article ("the") in both the user word and the dict word
         // if they are both present. If only one is present don't bother with the accent test (or the gender test). A definite
-        // articles are deemed valid if they are both present on the DIRECT_OBJECT_GENDER file (specific to the current language). 
+        // articles are deemed valid if they are both present on the DIRECT_OBJECT_GENDER file (specific to the current language).
 
         index1 = userWord.indexOf(' ');
 
@@ -287,17 +293,17 @@
             return false;
         };
 
-        console.log("array len" + JS_list_special_chars.length);
+        console.log("array len" + JS_listOfSpecialChars.length);
         simplifiedUserWord = userWord;
         simplifiedDictWord = dictWord;
-        for (i = 0; i < JS_list_special_chars.length; i++) {
-            let specialChar = JS_list_special_chars[i][1];
-            let genericChar = JS_list_special_chars[i][2];
+        for (i = 0; i < JS_listOfSpecialChars.length; i++) {
+            let specialChar = JS_listOfSpecialChars[i][1];
+            let genericChar = JS_listOfSpecialChars[i][2];
             console.log("userWord:" + userWord);
             console.log("dictWord:" + dictWord);
             console.log("specialChar:" + specialChar);
             console.log("genericChar:" + genericChar);
-            console.log("JS_list_special_chars[i][1]:" + JS_list_special_chars[i][1]);
+            console.log("JS_listOfSpecialChars[i][1]:" + JS_listOfSpecialChars[i][1]);
             simplifiedUserWord = simplifiedUserWord.split(specialChar).join(genericChar); // The str.split(x).join(y) technique replaces x's with y's in string str (much clearer and more useable than the terrible Regex)
             simplifiedDictWord = simplifiedDictWord.split(specialChar).join(genericChar); // The str.split(x).join(y) technique replaces x's with y's in string str (much clearer and more useable than the terrible Regex)
             console.log("userWord (original):" + userWord);
@@ -330,69 +336,103 @@
         };
 
         alert("Correct Answer = " + js_targetWord)
-        document.getElementById("id_actionToTake").value = "ProcessWord";
-        document.getElementById("id_resultForThisWord").value = "GiveUp";
+        document.getElementById("txtActionToTake").value = "ProcessWord";
+        document.getElementById("txtResultForThisWord").value = "GiveUp";
         document.getElementById("btnIdSubmitToServer").click();
     };
 
 //**************************************************************************
     function btnShowHintOnClick() {
 //**************************************************************************
+
+        if (js_NativeHint.trim() == "") {
+            js_NativeHint = "No hint for this word, sorry!"
+        };
+
+        if (js_ForeignHint.trim() == "") {
+            js_ForeignHint = "No hint for this word, sorry!"
+        };
+
         if (js_translationDirectionOfWord == const_nativeToForeign) {
-            document.getElementById("HeaderNativeHint").style.visibility = "visible";
+            document.getElementById("hdrHint").innerText = "Hint: " + js_NativeHint;
         }
         else if (js_translationDirectionOfWord == const_foreignToNative) {
-            document.getElementById("HeaderForeignHint").style.visibility = "visible";
+            document.getElementById("hdrHint").innerText = "Hint: " + js_ForeignHint;
         }
     };
 
 //**************************************************************************
     function formInputOnKeyUp(event, fieldBeingModified) {
 //**************************************************************************
-        if (event.key === "Enter") {  //if the user hits enter in the textGuessInput field, hit btnTryIt button automatically!!
+        /* This basic purpose of this function is to translate certain key presses into alternative characters,
+         * based on the translation provided in the file SPECIAL_CHARS (loaded into array JS_listOfSpecialChars - array has 3 cols, n rows)
+         * This array will hold values between 0-9 along with a special character (presumed to be an accent particular to a language)
+         * and a "regular" character (if applicable) in the Native language (presumed to be English but it's flexible)!
+         * So if our array looks like this:
+         * 1 | à | a
+         * 2 | é | e
+         * 3 | ö | o
+         * and the user hits "2", a "é" char will appear instead of the 2 in the relevant field.
+         * The third col is used elsewhere to check if the user has entered a word correctly except for accents.
+         * 
+         * Certain varations of this function may contain extra code, eg to allow the user to press # in order to reveal a hint during testing
+         * or to hit enter and some default button have its "OnClick" event triggered.
+         */
+        
+        if (event.key === "Enter") {  //if the user hits enter in the textGuessInput field, hit btnTryIt button automatically (as long as textGuessInput isn't blank)!!
             if (document.getElementById("textGuessInput").value.trim() != "") {
                 btnTryItOnClick();
             };
         };
- 
-        let keyPressed = event.key;
 
-        if ("0123456789".includes(keyPressed)
+        let keyPressed = event.key;
+        console.log("keyPressed:" + keyPressed);
+
+        if ("#0123456789".includes(keyPressed)
             && keyPressed.length == 1) {
 
-            switch (keyPressed) {
-                case "1":
-                    document.getElementById(fieldBeingModified).value = document.getElementById(fieldBeingModified).value.replace(keyPressed, "ä");
-                    break;
-                case "2":
-                    document.getElementById(fieldBeingModified).value = document.getElementById(fieldBeingModified).value.replace(keyPressed, "ö");
-                    break;
-                case "3":
-                    document.getElementById(fieldBeingModified).value = document.getElementById(fieldBeingModified).value.replace(keyPressed, "ü");
-                    break;
-                case "4":
-                    document.getElementById(fieldBeingModified).value = document.getElementById(fieldBeingModified).value.replace(keyPressed, "ß");
-                    break;
-                case "5":
-                    document.getElementById(fieldBeingModified).value = document.getElementById(fieldBeingModified).value.replace(keyPressed, "Ä");
-                    break;
-                case "6":
-                    document.getElementById(fieldBeingModified).value = document.getElementById(fieldBeingModified).value.replace(keyPressed, "Ö");
-                    break;
-                case "7":
-                    document.getElementById(fieldBeingModified).value = document.getElementById(fieldBeingModified).value.replace(keyPressed, "Ü");
-                    break;
-                case "8":
-                    document.getElementById(fieldBeingModified).value = document.getElementById(fieldBeingModified).value.replace(keyPressed, "ô");
-                    break;
-                case "9":
-                    document.getElementById(fieldBeingModified).value = document.getElementById(fieldBeingModified).value.replace(keyPressed, "ù");
-                    break;
-                case "0":
-                    document.getElementById(fieldBeingModified).value = document.getElementById(fieldBeingModified).value.replace(keyPressed, "");
-                    btnShowHintOnClick();
+            if (keyPressed == "#") {
+                document.getElementById(fieldBeingModified).value = document.getElementById(fieldBeingModified).value.replace(keyPressed, "");
+                btnShowHintOnClick();
+            }                                                            // JS_listOfSpecialChars is array of 3-col-wide x length of "However many SpecialChar rows have been set up for this language
+            else {                                                       // We KNOW user has pressed 0-9 so loop through JS_listOfSpecialChars array, 
+                for (i = 0; i < JS_listOfSpecialChars.length; i++) {     // check each col[0] to see if it matches the key pressed. If it does, replace keyPressed with special char in col[1]
+                    if (keyPressed == JS_listOfSpecialChars[i][0]) {     // Note that array might look like row#0:[3,é,e] row#1:[7àa] i.e. only two rows but col[0]'s (which designate which key will be replaced) don't have to match row#
+                        document.getElementById(fieldBeingModified).value = document.getElementById(fieldBeingModified).value.replace(keyPressed, JS_listOfSpecialChars[i][1]);
+                    }
+                }
             }
-
         }
+    }
+
+//**************************************************************************
+    function unfurlSpecialCharArray() {
+//**************************************************************************
+        // The idea of this function is to turn this (from the Special_Chars file):
+        // 1 | à | a
+        // 5 | é | e
+        // 6 | ö | o
+        // into this (a string we can append to the hdrProgress... header):
+        // -- Keyboard Shortcuts:[1=à][5=é][6=ö]
+
+        //...in order to let the user know what keyboard shortcuts are set up for this language.
+        // Note that while the left column says "1 5 6" this is just a (slightly odd!) sample of the keys a user can use for shortcuts to
+        // special chars! Normally you'd just use 1..2..3.. etc I guess!
+
+        unfurledArrayAsString = " "
+
+        for (i = 0; i < JS_listOfSpecialChars.length; i++) {
+            unfurledArrayAsString += "[" + JS_listOfSpecialChars[i][0] + "=" + JS_listOfSpecialChars[i][1] + "]"
+        }
+        if  (unfurledArrayAsString.length > 1) {
+            unfurledArrayAsString = " -- Keyboard Shortcuts:" + unfurledArrayAsString;
+        }
+        return unfurledArrayAsString;
+    }
+
+//**************************************************************************
+    function btnSaveTestOnClick() {
+//**************************************************************************
+        alert("SAVE Progress of Test functionality has not yet been coded! Sorry!")
     }
 </script>

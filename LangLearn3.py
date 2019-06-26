@@ -17,7 +17,7 @@ app.secret_key = 'secretKey'
 def intro():
     try:
         print("this is the intro function in Python")
-        flash("hi i am sending a flash message to client side!")
+        flash("Hi! This is a FLASH message to client side from Python! All rights reserved. All wrongs reserved also!")
         return render_template("intro.html")       #...send a template, called intro.html in this case
     except Exception as e:
         errorString = "Something went wrong while rendering. Error " + str(e)
@@ -34,8 +34,8 @@ def dictionaries():
     c.execute('SELECT DISTINCT ForeignLanguage FROM DICT_RECORD')
     myData = c.fetchall()                 # fetchall retrieves a LIST of TUPLES, e.g. [('GERMAN',), ('ITALIAN',), ('FRENCH',)]
     c.execute('select count (distinct ForeignLanguage) from DICT_RECORD;')
-    myNumberOfLanguagesInt = c.fetchone() # fetchone retrives a single TUPLE e.g. (3,)
-    myNumberOfLanguagesStr = str(myNumberOfLanguagesInt)
+    NumberOfLanguagesTuple = c.fetchone() # fetchone retrives a single TUPLE e.g. (3,) if there are 3 languages
+    numberOfLanguages = NumberOfLanguagesTuple[0]
 
     listOfLanguages = []                            #initialise an empty list
     for eachTuple in myData:                        #extract each tuple from the list of tuples in myData
@@ -44,23 +44,14 @@ def dictionaries():
 
     JSONlistOfLanguages = json.dumps(listOfLanguages)
 
-    return render_template("dictionaries.html", theTestWord="No Word Yet", passNumberOfLanguages=myNumberOfLanguagesStr, arrayOfLanguages=JSONlistOfLanguages)
-
-    #return render_template("dictionaries.html")       #...send a template, called dictionaries.html in this case
-                                          #myRenderedData is a variable in profile.html
-                                                         #myData is a variable which has its value sourced from the database
-                                                                 #myYak is a variable in profile.html which we populate here with hardcoded string
+    return render_template("dictionaries.html",
+                           flask_numberOfLanguages = numberOfLanguages,
+                           flask_arrayOfLanguages  = JSONlistOfLanguages)
 
 ############################### </dictionaries PAGE> ################################################################################################
 
 
 ############################### MISCELLANEOUS FUNCTIONS ##############################################
-def popOffToMyOwnFunction(scooby):
-    print("I Like my little Canadian function. Its head pops off like a dustbin lid and everything!")
-    print(scooby)
-    return
-
-#######################################
 
 def create_new_dict_entry(row):
     """use of placeholders seems to be mandatory with SQLITE..."""
@@ -205,10 +196,6 @@ def find_next_available_TestID(py_currentLanguage):
                WHERE ForeignLanguage = ?', \
                    (py_currentLanguage,)) #placeholder variables comma-separated and in brackets as they need to be a TUPLE
 
-    #c.execute('select count(*) from TEST_HISTORY')
-
-    #c.execute('SELECT TestID FROM TEST_HISTORY WHERE ForeignLanguage = ?', ("GERMAN",))
-
     print("SQL executed...")
 
     tuple_data = c.fetchone()
@@ -274,7 +261,8 @@ def load_special_chars(py_currentLanguage):
 
     c.execute('SELECT Key, SpecialChar, CompareChar \
                FROM SPECIAL_CHARS                   \
-               WHERE ForeignLanguage = ?',          \
+               WHERE ForeignLanguage = ?            \
+               ORDER BY Key',
                    (py_currentLanguage,)) # placeholder variables comma-separated and in brackets as they need to be a TUPLE
 
     print("SQL executed...")
@@ -293,6 +281,9 @@ def load_special_chars(py_currentLanguage):
 @app.route("/viewModifyDictionary/<string:viewModifyDictionaryLanguage>", methods=["GET","POST"]) #when we have http://127.0.0.1:5000/viewModifyDictionary plus the name of a language (e.g. GERMAN) we are directed here, to this "app.route"
 def viewModifyDictionary(viewModifyDictionaryLanguage):
 
+    list_special_chars = load_special_chars(viewModifyDictionaryLanguage)
+    JSON_list_special_chars = json.dumps(list_special_chars)
+
     try:
         if request.method == "POST":
             #JSON_tableOfWordsFromFrontEnd = request.form['JSON_tableOfWords']
@@ -301,7 +292,6 @@ def viewModifyDictionary(viewModifyDictionaryLanguage):
             print("this is the viewModifyDictionary function in Python - POST method")
             #xyz = request.form['toPythonTableData'] #toPythonTableData comes from the 'name' attribute in an input field on the form submitted from HTML! No need for flask specific stuff here
             #print(xyz)
-            #popOffToMyOwnFunction("zoinks")
             #return render_template("viewModifyDictionary.html")
 
             print("JSON String Sent:",request.form['toPythonTableData'])
@@ -351,7 +341,10 @@ def viewModifyDictionary(viewModifyDictionaryLanguage):
             JSON_allRowsForSpecificLanguage = json.dumps(Python_allRowsForSpecificLanguage)
             #myNumberOfWordsInLanguageDictStr = myNumberOfWordsInLanguageDictTuple[0]
 
-            return render_template("viewModifyDictionary.html", EditLanguage=viewModifyDictionaryLanguage, JSON_allRowsForSpecificLanguage=JSON_allRowsForSpecificLanguage)
+            return render_template("viewModifyDictionary.html",
+                                   EditLanguage                    = viewModifyDictionaryLanguage,
+                                   flask_listOfSpecialChars        = JSON_list_special_chars,
+                                   JSON_allRowsForSpecificLanguage = JSON_allRowsForSpecificLanguage)
 
             #request.form['postRowNum'] = "XYZ"
             #return ('', 204) #This line specifies that the RESPONSE is empty. There must BE a response, but in this case, it doesn't contain anything so the Client Side doesn't need to act (i.e. no rendering reqired, etc)
@@ -366,9 +359,11 @@ def viewModifyDictionary(viewModifyDictionaryLanguage):
             Python_allRowsForSpecificLanguage = c.fetchall() # fetchall retrives a LIST (size >=1) of TUPLEs. Each tuple represents a row of data and consists of one element per DATABASE column
     
             JSON_allRowsForSpecificLanguage = json.dumps(Python_allRowsForSpecificLanguage)
-            #myNumberOfWordsInLanguageDictStr = myNumberOfWordsInLanguageDictTuple[0]
 
-            return render_template("viewModifyDictionary.html", EditLanguage=viewModifyDictionaryLanguage, JSON_allRowsForSpecificLanguage=JSON_allRowsForSpecificLanguage)
+            return render_template("viewModifyDictionary.html",
+                                   EditLanguage                    = viewModifyDictionaryLanguage,
+                                   flask_listOfSpecialChars        = JSON_list_special_chars,
+                                   JSON_allRowsForSpecificLanguage = JSON_allRowsForSpecificLanguage)
     except Exception as e:
         flash(e)
         return render_template("yikes_404.html")
@@ -385,8 +380,8 @@ def test():
     c.execute('SELECT DISTINCT ForeignLanguage FROM DICT_RECORD')
     myData = c.fetchall()                 # fetchall retrieves a LIST of TUPLES, e.g. [('GERMAN',), ('ITALIAN',), ('FRENCH',)]
     c.execute('select count (distinct ForeignLanguage) from DICT_RECORD;')
-    myNumberOfLanguagesInt = c.fetchone() # fetchone retrives a single TUPLE e.g. (3,)
-    myNumberOfLanguagesStr = str(myNumberOfLanguagesInt)
+    numberOfLanguagesTuple = c.fetchone() # fetchone retrives a single TUPLE e.g. (3,)
+    numberOfLanguages = numberOfLanguagesTuple[0]
 
     listOfLanguages = []                            #initialise an empty list
     for eachTuple in myData:                        #extract each tuple from the list of tuples in myData
@@ -395,14 +390,16 @@ def test():
 
     JSONlistOfLanguages = json.dumps(listOfLanguages)
 
-    return render_template("test.html", theTestWord="No Word Yet", passNumberOfLanguages=myNumberOfLanguagesStr, arrayOfLanguages=JSONlistOfLanguages)
+    return render_template("test.html",
+                           flask_numberOfLanguages = numberOfLanguages,
+                           flask_arrayOfLanguages  = JSONlistOfLanguages)
 
-@app.route("/test/<string:sentTestWord>") #when we have http://127.0.0.1:5000/test and nothing after the intro we are directed here, to this "app.route"
-def testWord(sentTestWord):
-    global a # declare variable as global inside the function if you want to do update them. global is not needed for printing and accessing
-    #a = a + 1
-    sentTestWord = sentTestWord + str(a)
-    return render_template("test.html", theTestWord=sentTestWord)
+#@app.route("/test/<string:sentTestWord>") #when we have http://127.0.0.1:5000/test and nothing after the intro we are directed here, to this "app.route"
+#def testWord(sentTestWord):
+#    global a # declare variable as global inside the function if you want to do update them. global is not needed for printing and accessing
+#    #a = a + 1
+#    sentTestWord = sentTestWord + str(a)
+#    return render_template("test.html", theTestWord=sentTestWord)
 
 ############################### </test PAGE> ################################################################################################
 
@@ -465,6 +462,7 @@ def runningTest():
             print("BEFORE ADDING! py_totalCorrectOnFirstTryCount:", py_totalCorrectOnFirstTryCount)
 
             if   py_resultForThisWord == "RightFirstTime":
+                 print("BUMP Right First Time Score!! **************************")
                  py_totalCorrectOnFirstTryCount += 1
             elif py_resultForThisWord == "RightSubsequentTime":
                  py_totalCorrectOnSubsequentTryCount += 1
@@ -635,7 +633,7 @@ def runningTest():
                                flask_TestID                           = py_TestID,
                                flask_actionToTake                     = py_actionToTake,
                                flask_JSON_list_direct_object_genders  = gbl_JSON_list_direct_object_genders,
-                               flask_JSON_list_scs                    = gbl_JSON_list_special_chars)
+                               flask_listOfSpecialChars               = gbl_JSON_list_special_chars)
     except Exception as e:                                                                                                                              
         flash(e)                                                                                                                                        
         return render_template("yikes_404.html")
@@ -686,7 +684,9 @@ def chooseTestParams(TestLanguage):
             myNumberOfWordsInLanguageDictTuple = c.fetchone() # fetchone retrives a single TUPLE e.g. (3,)
             myNumberOfWordsInLanguageDictStr = myNumberOfWordsInLanguageDictTuple[0] #next we extract the only element from the tuple 
 
-            return render_template("chooseTestParams.html", TestLanguage=TestLanguage, SizeOfDictionary=myNumberOfWordsInLanguageDictStr)
+            return render_template("chooseTestParams.html",
+                                   TestLanguage     = TestLanguage,
+                                   SizeOfDictionary = myNumberOfWordsInLanguageDictStr)
 
     except Exception as e:
         flash(e)

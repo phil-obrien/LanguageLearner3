@@ -70,78 +70,67 @@ form {
     color: mediumblue;
 }
 
-table {
-    border-collapse: separate;
-    border-spacing: 0;
-    color: #4a4a4d;
-    display: block;
-    font: 14px/1.4 "Helvetica Neue", Helvetica, Arial, sans-serif;
+.table {
+    border-collapse: collapse;
+    width: 100%;
 }
 
-thead {
-    display: block;
+.table td {
+    font-size: 14px;
+    padding: 10px 20px;
+    overflow: hidden;
+    word-break: normal;
+    color: #333;
+    border-left: 1px solid #ccc;
+    border-right: 1px solid #ccc;
+    border-bottom: 1px solid #ccc;
+    background-color: #FFFFFF;
+    font-family: "Arial";
+    text-align: center;
+}
+
+.table th {
+    font-weight: bold;
+    font-family: Arial;
+    text-align: center;
+    font-size: 16px;
+    border: 1px solid #ccc;
+    border-bottom: 2px solid #ccc;
+    padding: 10px 20px;
+    word-break: normal;
+    color: #333;
+    background-color: #F0F0F0;
+}
+
+.tablealign {
+    float: left;
+    padding-left: 0%;
+    padding-right: 10%;
+    width: 90%;
+    height: 380px;
+    border-radius: 3px;
+    padding-bottom: 5px;
 }
 
 tbody {
+    overflow-y: scroll;
+    overflow-x: hidden;
+    height: 310px;
     display: block;
-    height: 300px;
-    overflow-y: scroll; /*if the table body exceeds designated height i.e. y-axis (300px in this case) put a scroll bar on the table body*/
 }
 
-th,
-td {
-    padding: 10px 15px;
-    vertical-align: middle;
+thead {
+    display: table;
+    width: calc(100% - 17px);
+    table-layout: fixed;
 }
 
-
-
-th:first-child {
-    border-top-left-radius: 5px;
-    text-align: left;
-}
-
-th:last-child {
-    border-top-right-radius: 5px;
+tbody tr {
+    table-layout: fixed;
+    display: table;
+    width: 100%;
 }
 
 tbody tr:nth-child(even) {
     background: #f0f0f2;
 }
-
-td {
-    border-bottom: 1px solid #cecfd5;
-    border-right: 1px solid #cecfd5;
-}
-
-td:first-child {
-    border-left: 1px solid #cecfd5;
-    }
-
-.book-title {
-    color: #395870;
-    display: block;
-}
-
-.text-offset {
-    color: #7c7c80;
-    font-size: 12px;
-}
-
-tfoot {
-    text-align: right;
-}
-
-tfoot tr:last-child {
-    background: #f0f0f2;
-    color: #395870;
-    font-weight: bold;
-}
-
-tfoot tr:last-child td:first-child {
-    border-bottom-left-radius: 5px;
-}
-
-tfoot tr:last-child td:last-child {
-    border-bottom-right-radius: 5px;
-} 

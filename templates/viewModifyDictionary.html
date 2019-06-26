@@ -7,11 +7,9 @@
 
     <div id="div1">
 
-        <input type="text" id="randomInputField">
+        <h1 style="color:orangered">Welcome to Language Learner 3!</h1>
 
-        <h1 style="color:orangered">Welcome to the Language Learner!</h1>
-
-        <h2>View and Modify {{EditLanguage}} dictionary</h2>
+        <h2 id="hdrIntroAndKeyShortcuts">View and Modify {{EditLanguage}} dictionary</h2>
 
     </div>
 
@@ -20,34 +18,35 @@
         <button class="smallFloatingButtonEnabled" id="btnSave" onclick="btnSaveOnClick()">SAVE</button>
         <button class="smallFloatingButtonEnabled" id="btnUndoAll" onclick="btnUndoAllOnClick()">Undo All Changes</button>
 
-        <form action="" method="post">
-            <button id="btnSubmitTableData" name="btnSubmitTableData" value="submit" onclick="btnSubmitTableDataOnClick()">Submit</button>
-            <br>
-            <input type="text" id="JsonStringFieldToPython" name="toPythonTableData"> <!"name" attribute is crucial for sending data to the server! No need for flask specific stuff here! Who knew?! See Python comment>
-            <input type="text" id="id_currentLanguage" name="currentLanguage">
-        </form>
-        
-        <br>
+        <br />
+        <br />
 
-        <table id="tableOfWords" align="center">
-            <thead>
-                <tr>
-                    <th>Native Word</th>
-                    <th>Native Hint</th>
-                    <th>Foreign Word</th>
-                    <th>Foreign Hint</th>
-                    <th>Foreign Plural</th>
-                    <th>Action</th>
-                    <th>Status</th>
-                </tr>
-            </thead>
-            <tbody id="tableOfWordsBody"></tbody>
-        </table>
-        <br>
+        <div>
+            <div class="tablealign">
+                <table id="tableOfWords" class="table" border="1">
+                    <thead>
+                        <tr>
+                            <th>Native Word</th>
+                            <th>Native Hint</th>
+                            <th>Foreign Word</th>
+                            <th>Foreign Hint</th>
+                            <th>Foreign Plural</th>
+                            <th>Action</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableOfWordsBody"></tbody>
+                </table>
+            </div>
+        </div>
 
-        <button class="smallFloatingButtonEnabled" id="btnAddNewRow" onclick="btnAddNewRowOnClick()">Add New Row</button>
-        <button class="smallFloatingButtonEnabled" id="btnDebugAction" onclick="btnDebugActionOnClick()">DebugAction</button>
-        <br>
+        <br />
+
+        <div>
+            <button display="block" class="smallFloatingButtonEnabled" id="btnAddNewRow" onclick="btnAddNewRowOnClick()">Add New Row</button>
+            <button display="block" class="smallFloatingButtonEnabled" id="btnDebugAction" onclick="btnDebugActionOnClick()" style="display:none">DebugAction</button>
+        </div>
+        <br />
 
         <div id="divAddOrModifyRow" style="display:none">
 
@@ -72,9 +71,27 @@
 
         </div>
 
+        <form action="" method="post">
+            <button id="btnSubmitTableData" name="btnSubmitTableData" value="submit" onclick="btnSubmitTableDataOnClick()">Submit</button>
+            <br>
+            <input type="text" id="txtJsonStringFieldToPython" name="toPythonTableData"> <!"name" attribute is crucial for sending data to the server! No need for flask specific stuff here! Who knew?! See Python comment>
+            <input type="text" id="txtCurrentLanguage" name="currentLanguage">
+        </form>
+
     </div>
 
+
+<!*******************************************************************************************************>
+<!************************** END OF HTML ****************************************************************>
+<!*******************************************************************************************************>
+
 <script>
+
+    // make the 3 HTML components involved with sending data to the backend invisible. We want them, we just don't want the user to see them!
+    document.getElementById("btnSubmitTableData").style.visibility = "hidden";
+    document.getElementById("txtJsonStringFieldToPython").style.visibility = "hidden";
+    document.getElementById("txtCurrentLanguage").style.visibility = "hidden";
+
     //these consts are specific to the form used to create/modify table rows. They are used to change the Form caption, and also to test the Form Mode so we'll know if we're doing a modify or create
     const createNewRowCaption = "Create New Entry";
     const modifyRowCaption    = "Edit Details";
@@ -89,7 +106,7 @@
     const POST_DELETE_ROW = "DELETE";
 
     const js_editLanguage = "{{EditLanguage}}"; //note the quotes - without these, the system tries to assign the VARIABLE (eg) GERMAN to js_editLanguage instead of the VALUE "GERMAN" (eg)
-    
+
 
     var rowBeingModifiedGlobal; //this global variable holds the value of the table body row (0..n) being modified
 
@@ -102,8 +119,6 @@
 //BEGIN testing...
     console.log(JSONarrayOfWords);
     console.log(JSarrayOfWords);
-    //document.getElementById("JsonStringFieldToPython").value = JSONarrayOfWords; //xyz 01/12/18 why was this line of code here? why populate the JSON when loading??
-    //document.getElementById("JsonStringFieldToPython").value = "Latin";
 //END testing...
 
 
@@ -115,7 +130,15 @@
 
     populateDictionaryTable();
 
+    // Process Special Chars and append them (if present) to a header
+    JSON_listOfSpecialChars = {{ flask_listOfSpecialChars | tojson }};
+    JS_listOfSpecialChars = JSON.parse(JSON_listOfSpecialChars);
+    console.log("JS_listOfSpecialChars:" + JS_listOfSpecialChars);
+    document.getElementById("hdrIntroAndKeyShortcuts").innerText += unfurlSpecialCharArray(); // appends string showing special chars for current language e.g. -- Keyboard Shortcuts:[1=à][5=é][6=ö]
+
+//**************************************************************************
     function populateDictionaryTable() {
+//**************************************************************************
 
         for (i = 0; i < JSarrayOfWords.length; i++) {
 
@@ -126,8 +149,8 @@
             var foreignPlural = JSarrayOfWords[i][4];
 
             addNewRowToTable(i, nativeWord, nativeHint, foreignWord, foreignHint, foreignPlural, LOADED_FROM_DB_ICON);
-            
-        };                
+
+        };
 
         var currentLength = document.getElementById("tableOfWords").rows.length;
         console.log("tableLength =", currentLength);
@@ -135,7 +158,10 @@
         console.log("tableLength(body) =", currentLength);
     }
 
+//**************************************************************************
     function btnAddNewRowOnClick() {
+//**************************************************************************
+
         //make the Add/Edit Row form visible
         document.getElementById("divAddOrModifyRow").style.display = 'block';    //'block' makes the div containing the Add/Edit Row form appear (as opposed to 'none' which makes it disappear)
         document.getElementById("legendInputFormHeaderCaption").innerHTML = createNewRowCaption;
@@ -167,7 +193,10 @@
         document.getElementById("inputNativeWord").focus();
     };
 
+//**************************************************************************
     function btnConfirmOnClick() {
+//**************************************************************************
+
                 /*************************/
                 /* btnConfirm for CREATE */
                 /*************************/
@@ -234,7 +263,7 @@
             tableBody.rows[rowBeingModifiedGlobal].cells[4].innerHTML = document.getElementById("inputForeignPlural").value;
 
             if (tableBody.rows[rowBeingModifiedGlobal].cells[6].innerHTML != NEW_ROW_ICON) { //don't make the UNDO button available and don't change the icon to EDIT if we're modifying a row that is not yet on DB (i.e. user created it and hasn't saved yet).
-         
+
                 if (JSarrayOfWords[rowBeingModifiedGlobal][0] != document.getElementById("inputNativeWord").value
                     || JSarrayOfWords[rowBeingModifiedGlobal][1] != document.getElementById("inputNativeHint").value
                     || JSarrayOfWords[rowBeingModifiedGlobal][2] != document.getElementById("inputForeignWord").value
@@ -259,7 +288,9 @@
         };
     };
 
+//**************************************************************************
     function addNewRowToTable(rowNum, nativeWord, nativeHint, foreignWord, foreignHint, foreignPlural, rowStatus) {
+//**************************************************************************
         var tableBody = document.getElementById("tableOfWordsBody");
         var row = tableBody.insertRow(-1); //inserting at row -1 means we append after the last row
         var cell0 = row.insertCell(0);                  //native word
@@ -267,7 +298,7 @@
         var cell2 = row.insertCell(2);                  //foreign word
         var cell3 = row.insertCell(3);                  //foreign hint
         var cell4 = row.insertCell(4);                  //foreign plural
-        var cell5 = row.insertCell(5);                  //action-buttons cell 
+        var cell5 = row.insertCell(5);                  //action-buttons cell
         var cell6 = row.insertCell(6);                  //row status
         cell0.innerHTML = nativeWord;
         cell1.innerHTML = nativeHint;
@@ -346,7 +377,9 @@
         console.log(nativeWord, nativeHint, foreignWord, foreignHint);
     }   //******** end of function: addNewRowToTable ********
 
+//**************************************************************************
     function btnCloseOnClick() {
+//**************************************************************************
         document.getElementById("divAddOrModifyRow").style.display = 'none';
 
         document.getElementById("btnAddNewRow").className = "smallFloatingButtonEnabled";
@@ -355,7 +388,9 @@
         reEnableTemporarilyDisabledTableButtons();
     };
 
+//**************************************************************************
     function reEnableTemporarilyDisabledTableButtons() {
+//**************************************************************************
         //...and the buttons embedded in the table:
         let reEnableTemporarilyDisabledButtons = [...document.getElementsByClassName("tableButtonTemporarilyDisabled")];
         console.log("reEnableTemporarilyDisabledButtons:", reEnableTemporarilyDisabledButtons);
@@ -375,7 +410,10 @@
         };
     };
 
+//**************************************************************************
     function editTableRow(tableBodyRowNum) {
+//**************************************************************************
+
         console.log("tableBodyRowNum:", tableBodyRowNum);
 
         //we're editing a populated row (whether it exists on DB yet or not doesn't matter) so enable btnCONFIRM
@@ -405,14 +443,17 @@
         temporarilyDisableTableButtons();
     }
 
+//**************************************************************************
     function deleteTableRow(tableBodyRowNum) {
+//**************************************************************************
+
         var tableBody = document.getElementById("tableOfWordsBody");
 
         if (tableBody.rows[tableBodyRowNum].cells[6].innerHTML == NEW_ROW_ICON) {
-            //To DELETE a  NEW row, remove the row completely and also update the IDs AND EVENT LISTENERS of the 3 action buttons on ALL subsequent rows 
-            //(in order to keep table body rows numerically linked to IDs on these buttons - vital for processing correct table body row when clicking 
+            //To DELETE a  NEW row, remove the row completely and also update the IDs AND EVENT LISTENERS of the 3 action buttons on ALL subsequent rows
+            //(in order to keep table body rows numerically linked to IDs on these buttons - vital for processing correct table body row when clicking
             //table buttons)
-           
+
             console.log("tableBody.rows.length (before loop & delete)", tableBody.rows.length);
 
             for (let i = tableBodyRowNum+1; i < tableBody.rows.length; i++) {
@@ -481,7 +522,9 @@
         };
     };
 
+//**************************************************************************
     function addTableButtonsToTableBodyRow(rowNum, rowStatus) {
+//**************************************************************************
 
         let tableBody = document.getElementById("tableOfWordsBody");
 
@@ -545,7 +588,9 @@
         document.getElementById(undoButtonID).addEventListener("click", function () { undoTableRow(rowNum); });  //comment required!
     };
 
+//**************************************************************************
     function btnUndoAllOnClick() {
+//**************************************************************************
 
         let tableOfWordsBody = document.getElementById("tableOfWordsBody");
 
@@ -576,8 +621,10 @@
         document.getElementById("btnUndoAll").disabled = true;
     };
 
+//**************************************************************************
     function undoTableRow(tableBodyRowNum) {
-        
+//**************************************************************************
+
         var tableBody = document.getElementById("tableOfWordsBody");
 
         if (tableBody.rows[tableBodyRowNum].cells[6].innerHTML == DELETE_ROW_ICON) {
@@ -674,7 +721,10 @@
         };
     };
 
+//**************************************************************************
     function temporarilyDisableTableButtons() {
+//**************************************************************************
+
         let temporarilyDisableButtons = [...document.getElementsByClassName("tableButtonEnabled")];
         console.log("temporarilyDisableButtons:", temporarilyDisableButtons);
         {//The ... here represents the "spread operator" which basically expands any iterable into its individual elements
@@ -688,7 +738,7 @@
             //I originally tried to use myHTMLCollection = document.getElementsByClassName("tableButtonEnabled") in the loop below.
             //However, as HTMLCollections are LIVE, every time I updated the class of a button from tableButtonEnabled to tableButtonTemporarilyDisabled
             //it meant myHTMLCollection.length was reduced by one! LIVE means the current state of the data is reflected, rather than the original state
-            //state of the data. So if we have a HTMLCollection of 12 buttons, at the half way point in the loop, there are only 6 buttons which still 
+            //state of the data. So if we have a HTMLCollection of 12 buttons, at the half way point in the loop, there are only 6 buttons which still
             //have class = tableButtonEnabled. By this stage the variable used to control the loop exceeds the highest element in the loop. So instead I'm
             //assigning the HTMLCollection to an array and looping on the contents of the array.
             //Note also that nodelists are not (always - hence unreliable) LIVE. So while let myNodeList = document.querySelectorAll('.tableButtonEnabled')
@@ -703,7 +753,9 @@
         };
     }
 
+//**************************************************************************
     function inputMandatoryWordOnInput() {    //Note: using onchange doesn't work properly as it doesn't trigger until focus is switched away from the input field. I needed the trigger to be instant!
+//**************************************************************************
 
         console.log("inputNativeWord=", (document.getElementById("inputNativeWord").value.trim()));
         console.log("inputForeignWord=", (document.getElementById("inputForeignWord").value.trim()));
@@ -723,7 +775,48 @@
 //        };
     };
 
+//**************************************************************************
+    function unfurlSpecialCharArray() {
+//**************************************************************************
+        // The idea of this function is to turn this (from the Special_Chars file):
+        // 1 | à | a
+        // 5 | é | e
+        // 6 | ö | o
+        // into this (a string we can append to a suitable header):
+        // -- Keyboard Shortcuts:[1=à][5=é][6=ö]
+
+        //...in order to let the user know what keyboard shortcuts are set up for this language.
+        // Note that while the left column says "1 5 6" this is just a (slightly odd!) sample of the keys a user can use for shortcuts to
+        // special chars! Normally you'd just use 1..2..3.. etc I guess!
+
+        let unfurledArrayAsString = " "
+
+        for (i = 0; i < JS_listOfSpecialChars.length; i++) {
+            unfurledArrayAsString += "[" + JS_listOfSpecialChars[i][0] + "=" + JS_listOfSpecialChars[i][1] + "]"
+        }
+        if (unfurledArrayAsString.length > 1) {
+            unfurledArrayAsString = " -- Keyboard Shortcuts:" + unfurledArrayAsString;
+        }
+        return unfurledArrayAsString;
+    }
+
+//**************************************************************************
     function formInputOnKeyUp(event, fieldBeingModified) {
+//**************************************************************************
+        /* This basic purpose of this function is to translate certain key presses into alternative characters,
+         * based on the translation provided in the file SPECIAL_CHARS (loaded into array JS_listOfSpecialChars - array has 3 cols, n rows)
+         * This array will hold values between 0-9 along with a special character (presumed to be an accent particular to a language)
+         * and a "regular" character (if applicable) in the Native language (presumed to be English but it's flexible)!
+         * So if our array looks like this:
+         * 1 | à | a
+         * 2 | é | e
+         * 3 | ö | o
+         * and the user hits "2", a "é" char will appear instead of the 2 in the relevant field.
+         * The third col is used elsewhere to check if the user has entered a word correctly except for accents.
+         * 
+         * Certain varations of this function may contain extra code, eg to allow the user to press # in order to reveal a hint during testing
+         * or to hit enter and some default button have its "OnClick" event triggered.
+         */
         if (event.key === "Enter") {  //if the user hits enter and btnConfirm is available, hit it automatically!
             if ((document.getElementById("inputNativeWord").value.trim() != "") && (document.getElementById("inputForeignWord").value.trim() != "")) {
                 btnConfirmOnClick();
@@ -732,60 +825,21 @@
 
         let keyPressed = event.key;
 
-        if ("0123456789".includes(keyPressed)
+        if ("0123456789".includes(keyPressed) //add any extra needed key presses to this list - note that non-digit keys will have to be processed outside loop unless they're on SPECIAL_CHARS file
         && keyPressed.length == 1) {
 
-            switch (keyPressed) {
-                case "1":
-                    document.getElementById(fieldBeingModified).value = document.getElementById(fieldBeingModified).value.replace(keyPressed, "à");
-                    break;
-                case "2":
-                    document.getElementById(fieldBeingModified).value = document.getElementById(fieldBeingModified).value.replace(keyPressed, "â");
-                    break;
-                case "3":
-                    document.getElementById(fieldBeingModified).value = document.getElementById(fieldBeingModified).value.replace(keyPressed, "ç");
-                    break;
-                case "4":
-                    document.getElementById(fieldBeingModified).value = document.getElementById(fieldBeingModified).value.replace(keyPressed, "é");
-                    break;
-                case "5":
-                    document.getElementById(fieldBeingModified).value = document.getElementById(fieldBeingModified).value.replace(keyPressed, "è");
-                    break;
-                case "6":
-                    document.getElementById(fieldBeingModified).value = document.getElementById(fieldBeingModified).value.replace(keyPressed, "ê");
-                    break;
-                case "7":
-                    document.getElementById(fieldBeingModified).value = document.getElementById(fieldBeingModified).value.replace(keyPressed, "î");
-                    break;
-                case "8":
-                    document.getElementById(fieldBeingModified).value = document.getElementById(fieldBeingModified).value.replace(keyPressed, "ô");
-                    break;
-                case "9":
-                    document.getElementById(fieldBeingModified).value = document.getElementById(fieldBeingModified).value.replace(keyPressed, "ù");
-                    break;
-                case "0":
-                    document.getElementById(fieldBeingModified).value = document.getElementById(fieldBeingModified).value.replace(keyPressed, "û");
+            for (i = 0; i < JS_listOfSpecialChars.length; i++) {  // check each col[0] to see if it matches the key pressed. If it does, replace keyPressed with special char in col[1]
+                if (keyPressed == JS_listOfSpecialChars[i][0]) {  // Note that array might look like row#0:[3,é,e] row#1:[7àa] i.e. only two rows but col[0]'s (which designate which key will be replaced) don't have to match row#
+                    document.getElementById(fieldBeingModified).value = document.getElementById(fieldBeingModified).value.replace(keyPressed, JS_listOfSpecialChars[i][1]);
+                }
             }
-
         }
-
-        //if (fieldBeingModified == 'inputNativeWord') {
-        //    alert("Signal A!")
-        //}
-
-        //if (event.key === "1") {
-            //console.log("ONE ONE ONE!")
-            //event.target.value += "SC1";
-            //event.target.value = "SC1";
-            //event.key = "X";
-            //event.preventDefault();  //this prevents original key from being shown (i.e. "1" won't be shown if "1" is pressed)
-            //.indexOf("1");
-        //};
-
-
     };
 
+//**************************************************************************
     function btnDebugActionOnClick() {
+//**************************************************************************
+
         console.log("DEBUG BUTTON CLICKED!");
 /*        document.getElementById("editButton1").removeEventListener("click", editTableRow); //need to get remove to work.Add a button and force it to do this only!!
         document.getElementById("editButton0").removeEventListener("click", editTableRow);
@@ -799,14 +853,17 @@
         document.getElementById("editButton3").removeEventListener("click", editTableRow(3));
         document.getElementById("editButton4").removeEventListener("click", editTableRow(4));
 */
-        elem = document.getElementById("editButton6"); 
+        elem = document.getElementById("editButton6");
         elem.parentNode.removeChild(elem);
 
        // DELETE AND RE-ADD THE BUTTONS BECAUSE EVENT LISTENERS CODE IS UNPREDICTABLE!
 
     };
 
+//**************************************************************************
     function btnSaveOnClick() {
+//**************************************************************************
+
         //depending on the table state, different paths will have to be taken.
         //1: if DB rows have been marked for delete, then ALL rows after the first delete need to be sent to the server to have their UniqueNum changed to fill in the gap(s) left by the delete(s)
         //2: if no DB rows are to be deleted, then go through the rows one by one, modifying or creating as appropriate
@@ -816,7 +873,7 @@
 
         //empty the array which controls the data to be sent to the backend. It will be rebuilt from table data before being posted
         JS_ArrayOfRowsToBePosted = []
-        document.getElementById("id_currentLanguage").value = "{{EditLanguage}}"
+        document.getElementById("txtCurrentLanguage").value = "{{EditLanguage}}"
         //JSON_ArrayOfRowsToBePosted = []
 
         let tableOfWordsBody = document.getElementById("tableOfWordsBody");
@@ -845,11 +902,15 @@
         };
     };
 
+//**************************************************************************
     function processTableRowMarkedForDelete() {
+//**************************************************************************
         //continue; you can't have continue on its own apparently! Just this comment should be enough to leave the function empty and waiting for code!
     };
 
+//**************************************************************************
     function processTableRowMarkedForModifyOrCreate() {
+//**************************************************************************
 
         console.log("processTableRowMarkedForModifyOrCreate")
 
@@ -872,12 +933,14 @@
 
         console.log(JSON_ArrayOfRowsToBePosted);
 
-        document.getElementById("JsonStringFieldToPython").value = JSON_ArrayOfRowsToBePosted;
+        document.getElementById("txtJsonStringFieldToPython").value = JSON_ArrayOfRowsToBePosted;
         document.getElementById("btnSubmitTableData").click();
 
     };
 
+//**************************************************************************
     function addTableRowToArrayOfArrays(methodName, rowNum) {
+//**************************************************************************
 
         let js_tableOfWordsBody = document.getElementById("tableOfWordsBody");
 
@@ -898,15 +961,16 @@
 
     };
 
+//**************************************************************************
     function populatePostFormAndSubmitData(rowNum) {  //xyz probably remove this function as i'll use array of arrays and submit one JSON string
+//**************************************************************************
+
         document.getElementById("postNativeWord").value    = tableOfWordsBody.rows[rowNum].cells[0].innerHTML;
         document.getElementById("postNativeHint").value    = tableOfWordsBody.rows[rowNum].cells[1].innerHTML;
         document.getElementById("postForeignWord").value   = tableOfWordsBody.rows[rowNum].cells[2].innerHTML;
         document.getElementById("postForeignHint").value   = tableOfWordsBody.rows[rowNum].cells[3].innerHTML;
         document.getElementById("postForeignPlural").value = tableOfWordsBody.rows[rowNum].cells[4].innerHTML;
         document.getElementById("postRowNum").value = rowNum;
-
-        document.getElementById("randomInputField").value = tableOfWordsBody.rows[rowNum].cells[0].innerHTML;
 
         //alert("wait a moment after population of fields", document.getElementById("postNativeWord").value);
 
@@ -920,11 +984,13 @@
 
     };
 
+//**************************************************************************
     function btnSubmitTableDataOnClick() {
+//**************************************************************************
         console.log("on click event of submit button");
         //alert("alert event of submit button");
     };
-</script>
+    </script>
 
 </body>
 </html>
